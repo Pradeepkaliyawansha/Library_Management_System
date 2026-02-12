@@ -306,17 +306,17 @@
           </form>
         </div>
 
-        <!-- FIX: Search input is now OUTSIDE .table-container so the table
-             border, border-radius, sticky thead, and overflow all work correctly -->
+        <!-- Search Input - OUTSIDE table-container -->
         <input
           type="text"
           id="studentSearch"
           class="search-input"
-          placeholder="🔍 Search students by ID, name, email, or department..."
+          placeholder="Search students by ID, name, email, or department..."
           onkeyup="filterStudents()"
           autocomplete="off"
         />
 
+        <!-- Table Container -->
         <div class="table-container">
           <table id="studentsTable">
             <thead>
@@ -418,16 +418,17 @@
           </form>
         </div>
 
-        <!-- FIX: Search input outside .table-container -->
+        <!-- Search Input - OUTSIDE table-container -->
         <input
           type="text"
           id="bookSearch"
           class="search-input"
-          placeholder="🔍 Search books by ISBN, title, author, or category..."
+          placeholder="Search books by Book No, title, author, or category..."
           onkeyup="filterBooks()"
           autocomplete="off"
         />
 
+        <!-- Table Container -->
         <div class="table-container">
           <table id="booksTable">
             <thead>
@@ -463,16 +464,17 @@
           </button>
         </div>
 
-        <!-- FIX: Search input outside .table-container -->
+        <!-- Search Input - OUTSIDE table-container -->
         <input
           type="text"
           id="transactionSearch"
           class="search-input"
-          placeholder="🔍 Search transactions by student ID, name, or book title..."
+          placeholder="Search transactions by student ID, name, or book title..."
           onkeyup="filterTransactions()"
           autocomplete="off"
         />
 
+        <!-- Table Container -->
         <div class="table-container">
           <table id="transactionsTable">
             <thead>
@@ -534,8 +536,6 @@
       </div>
     </div>
 
-    <!-- Use require() so Node resolves __dirname from the JS file's
-         own directory, fixing all chained require() module paths. -->
     <script>
       require("./js/app.js");
     </script>

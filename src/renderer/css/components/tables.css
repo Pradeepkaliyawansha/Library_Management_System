@@ -10,9 +10,11 @@
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--color-surface);
   font-size: var(--font-size-sm);
+  table-layout: auto;
 }
 
 /* Table Header */
@@ -32,16 +34,15 @@ th {
   letter-spacing: var(--letter-spacing-wider);
   color: white;
   white-space: nowrap;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 th:first-child {
   padding-left: var(--space-6);
-  border-top-left-radius: var(--radius-lg);
 }
 
 th:last-child {
   padding-right: var(--space-6);
-  border-top-right-radius: var(--radius-lg);
 }
 
 /* Sortable Headers */
@@ -104,7 +105,6 @@ tbody tr {
 
 tbody tr:hover {
   background: var(--color-surface-light);
-  transform: scale(1.001);
 }
 
 tbody tr:hover td {
