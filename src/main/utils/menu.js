@@ -157,7 +157,7 @@ function createMenu(mainWindow) {
           label: "Documentation",
           click: async () => {
             await shell.openExternal(
-              "https://github.com/yourusername/library-management",
+              "https://github.com/Pradeepkaliyawansha/Library_Management_System",
             );
           },
         },

@@ -6,7 +6,7 @@ const Dashboard = require("./components/dashboard");
 const Students = require("./components/students");
 const Books = require("./components/books");
 const Transactions = require("./components/transactions");
-
+const Analytics = require("./components/analytics");
 class App {
   constructor() {
     this.currentTab = "dashboard";
@@ -15,6 +15,7 @@ class App {
       students: null,
       books: null,
       transactions: null,
+      analytics: null,
     };
   }
 
@@ -29,6 +30,7 @@ class App {
     this.components.students = new Students();
     this.components.books = new Books();
     this.components.transactions = new Transactions();
+    this.components.analytics = new Analytics();
 
     // Setup event listeners
     this.setupEventListeners();
@@ -178,6 +180,9 @@ class App {
     }
     if (this.components.transactions) {
       this.components.transactions.destroy();
+    }
+    if (this.components.analytics) {
+      this.components.analytics.destroy();
     }
   }
 }

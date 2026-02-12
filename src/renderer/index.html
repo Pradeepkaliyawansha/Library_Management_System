@@ -459,6 +459,9 @@
             <h2 class="page-title">Book Transactions</h2>
             <p class="page-subtitle">Track book issues and returns</p>
           </div>
+          <button class="btn btn-info" onclick="showAnalytics()">
+            <span>📊</span> View Analytics
+          </button>
           <button class="btn btn-success" onclick="exportTransactionsToExcel()">
             <span>📊</span> Export to Excel
           </button>
@@ -534,6 +537,214 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+    <!-- ==================== ANALYTICS MODAL ==================== -->
+    <div
+      id="analyticsModal"
+      class="modal analytics-modal"
+      style="display: none"
+    >
+      <div class="modal-backdrop" onclick="hideAnalytics()"></div>
+      <div class="modal-content">
+        <div class="analytics-header">
+          <h2>
+            <span>📊</span>
+            Book Analytics & Insights
+          </h2>
+          <div class="analytics-header-actions">
+            <button
+              class="analytics-close-btn"
+              onclick="hideAnalytics()"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="analytics-content">
+          <!-- Filters -->
+          <div class="analytics-filters">
+            <div class="filter-group">
+              <label for="analyticsDateFrom">From Date</label>
+              <input type="date" id="analyticsDateFrom" />
+            </div>
+            <div class="filter-group">
+              <label for="analyticsDateTo">To Date</label>
+              <input type="date" id="analyticsDateTo" />
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" onclick="applyAnalyticsFilter()">
+                Apply Filter
+              </button>
+              <button
+                class="btn btn-secondary"
+                onclick="resetAnalyticsFilter()"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Key Statistics -->
+          <div class="analytics-stats-grid">
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Total Issues</div>
+              <div class="analytics-stat-value" id="totalIssues">0</div>
+              <div class="analytics-stat-description">
+                Books issued in selected period
+              </div>
+            </div>
+
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Total Returns</div>
+              <div class="analytics-stat-value" id="totalReturns">0</div>
+              <div class="analytics-stat-description">
+                Books returned successfully
+              </div>
+            </div>
+
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Currently Overdue</div>
+              <div class="analytics-stat-value" id="overdueCount">0</div>
+              <div class="analytics-stat-description">Books past due date</div>
+            </div>
+
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Avg. Loan Period</div>
+              <div class="analytics-stat-value" id="avgLoanPeriod">0</div>
+              <div class="analytics-stat-description">
+                Days books are borrowed
+              </div>
+            </div>
+
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Most Popular Book</div>
+              <div
+                class="analytics-stat-description"
+                id="mostPopularBook"
+                style="
+                  font-size: 1rem;
+                  margin-top: 0.5rem;
+                  font-weight: 600;
+                  color: var(--color-text);
+                "
+              >
+                N/A
+              </div>
+            </div>
+
+            <div class="analytics-stat-card">
+              <div class="analytics-stat-label">Most Active Student</div>
+              <div
+                class="analytics-stat-description"
+                id="mostActiveStudent"
+                style="
+                  font-size: 1rem;
+                  margin-top: 0.5rem;
+                  font-weight: 600;
+                  color: var(--color-text);
+                "
+              >
+                N/A
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="analytics-sections">
+            <!-- Most Popular Books -->
+            <div class="analytics-section">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">📖</span>
+                  Top 10 Most Issued Books
+                </h3>
+              </div>
+              <div id="popularBooksChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+
+            <!-- Student Activity -->
+            <div class="analytics-section">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">👥</span>
+                  Top 10 Most Active Students
+                </h3>
+              </div>
+              <div id="studentActivityChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+
+            <!-- Issue Trends -->
+            <div class="analytics-section analytics-section-full">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">📈</span>
+                  Issue & Return Trends (Last 12 Months)
+                </h3>
+              </div>
+              <div id="issueTrendsChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+
+            <!-- Category Distribution -->
+            <div class="analytics-section">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">📚</span>
+                  Category Distribution
+                </h3>
+              </div>
+              <div id="categoryDistChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+
+            <!-- Overdue Analysis -->
+            <div class="analytics-section">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">⚠️</span>
+                  Overdue Books by Duration
+                </h3>
+              </div>
+              <div id="overdueChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+
+            <!-- Daily Activity -->
+            <div class="analytics-section analytics-section-full">
+              <div class="analytics-section-header">
+                <h3 class="analytics-section-title">
+                  <span class="analytics-section-icon">📅</span>
+                  Daily Activity (Last 30 Days)
+                </h3>
+              </div>
+              <div id="dailyActivityChart">
+                <p style="text-align: center; color: var(--color-text-muted)">
+                  Loading...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

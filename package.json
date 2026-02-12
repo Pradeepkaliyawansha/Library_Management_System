@@ -30,13 +30,13 @@
     "email": "pradeep@example.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/yourusername/library-management#readme",
+  "homepage": "https://github.com/Pradeepkaliyawansha/Library_Management_System",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/library-management.git"
+    "url": "https://github.com/Pradeepkaliyawansha/Library_Management_System.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/library-management/issues"
+    "url": "https://github.com/Pradeepkaliyawansha/Library_Management_System/issues"
   },
   "dependencies": {
     "electron-updater": "^6.7.3",
