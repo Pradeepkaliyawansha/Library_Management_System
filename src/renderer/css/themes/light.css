@@ -130,9 +130,76 @@ body[data-theme="light"] .stat-card:hover::before {
   opacity: 0.08;
 }
 
+/* ==================== DASHBOARD ACTION CARDS - LIGHT THEME FIX ==================== */
+
+body[data-theme="light"] .action-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+}
+
+body[data-theme="light"] .action-card:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+body[data-theme="light"] .action-card::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 102, 241, 0.05),
+    transparent
+  );
+}
+
 body[data-theme="light"] .action-card:hover::before {
   opacity: 0.08;
 }
+
+body[data-theme="light"] .action-icon {
+  filter: grayscale(0) brightness(1);
+}
+
+body[data-theme="light"] .action-card:hover .action-icon {
+  filter: grayscale(0) brightness(1.1);
+}
+
+body[data-theme="light"] .action-title {
+  color: var(--color-text);
+}
+
+body[data-theme="light"] .action-desc {
+  color: var(--color-text-secondary);
+}
+
+/* Light theme dashboard sections */
+body[data-theme="light"] .dashboard-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-base);
+}
+
+body[data-theme="light"] .dashboard-section:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+body[data-theme="light"] .section-header-dash {
+  border-bottom: 2px solid var(--color-border);
+}
+
+body[data-theme="light"] .view-all-btn {
+  color: var(--color-primary);
+}
+
+body[data-theme="light"] .view-all-btn:hover {
+  color: var(--color-primary-dark);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ==================== END DASHBOARD FIX ==================== */
 
 /* Light theme table */
 body[data-theme="light"] tbody tr:hover {

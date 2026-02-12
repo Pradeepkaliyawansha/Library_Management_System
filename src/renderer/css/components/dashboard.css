@@ -75,6 +75,7 @@
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+  color: var(--color-text);
 }
 
 .action-card::before {

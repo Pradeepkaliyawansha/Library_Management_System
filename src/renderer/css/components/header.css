@@ -192,19 +192,57 @@ body[data-theme="light"] .moon-icon {
   opacity: 0.05;
 }
 
+/* ==================== WAVE ANIMATION FOR STAT ICONS ==================== */
+
+/* Wave Animation Keyframes */
+@keyframes waveFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-12px) rotate(-5deg);
+  }
+  66% {
+    transform: translateY(0) rotate(5deg);
+  }
+}
+
+/* Stat Icon with Wave Animation */
 .stat-icon {
   font-size: var(--font-size-4xl);
   flex-shrink: 0;
   filter: grayscale(0.3);
   transition: all var(--transition-base);
-  animation: bounce 2s ease-in-out infinite;
+  animation: waveFloat 3s ease-in-out infinite;
+  will-change: transform;
 }
 
+/* Staggered animation delays for wave effect */
+.stat-card:nth-child(1) .stat-icon {
+  animation-delay: 0s;
+}
+
+.stat-card:nth-child(2) .stat-icon {
+  animation-delay: 0.3s;
+}
+
+.stat-card:nth-child(3) .stat-icon {
+  animation-delay: 0.6s;
+}
+
+.stat-card:nth-child(4) .stat-icon {
+  animation-delay: 0.9s;
+}
+
+/* Enhanced hover state - pause animation and enlarge */
 .stat-card:hover .stat-icon {
   filter: grayscale(0);
-  transform: scale(1.1);
-  animation: none;
+  transform: scale(1.2) rotate(0deg);
+  animation-play-state: paused;
 }
+
+/* ==================== END WAVE ANIMATION ==================== */
 
 .stat-content {
   flex: 1;
@@ -281,6 +319,11 @@ body[data-theme="light"] .moon-icon {
   .header-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Faster wave on mobile */
+  .stat-icon {
+    animation-duration: 2.5s;
+  }
 }
 
 @media (max-width: 480px) {
@@ -290,5 +333,17 @@ body[data-theme="light"] .moon-icon {
 
   .stat-value {
     font-size: var(--font-size-2xl);
+  }
+}
+
+/* Reduced motion preference - respect user accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+  .stat-icon {
+    animation: none !important;
+  }
+
+  .stat-card:hover .stat-icon {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
   }
 }
