@@ -157,7 +157,7 @@ function createMenu(mainWindow) {
           label: "Documentation",
           click: async () => {
             await shell.openExternal(
-              "https://github.com/Pradeepkaliyawansha/Library_Management_System",
+              "https://github.com/Pradeepkaliyawansha/Library_Management_System/blob/main/README.md",
             );
           },
         },
