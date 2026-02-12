@@ -1,0 +1,262 @@
+body[data-theme="light"] {
+  /* Background Colors */
+  --color-bg: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-light: #f8fafc;
+
+  /* Text Colors */
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #f9fafb;
+
+  /* Primary Colors (slightly adjusted for light theme) */
+  --color-primary: #4f46e5;
+  --color-primary-light: #6366f1;
+  --color-primary-dark: #4338ca;
+
+  /* Accent Colors */
+  --color-accent: #db2777;
+  --color-accent-light: #ec4899;
+
+  /* Border Colors */
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-base:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+
+  /* Opacity adjustments for light theme */
+  --opacity-overlay: 0.5;
+}
+
+/* Light theme specific adjustments */
+body[data-theme="light"] .grain-overlay {
+  opacity: 0.02;
+}
+
+body[data-theme="light"] {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Light theme inputs */
+body[data-theme="light"] input,
+body[data-theme="light"] select,
+body[data-theme="light"] textarea {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+body[data-theme="light"] input::placeholder,
+body[data-theme="light"] select::placeholder,
+body[data-theme="light"] textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+body[data-theme="light"] input:focus,
+body[data-theme="light"] select:focus,
+body[data-theme="light"] textarea:focus {
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Light theme scrollbar */
+body[data-theme="light"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+  border-radius: 10px;
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
+  border-radius: 10px;
+  border: 2px solid var(--color-bg-tertiary);
+}
+
+body[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-accent-light) 100%
+  );
+}
+
+/* Light theme selection */
+body[data-theme="light"] ::selection {
+  background-color: rgba(79, 70, 229, 0.2);
+  color: var(--color-text);
+}
+
+body[data-theme="light"] ::-moz-selection {
+  background-color: rgba(79, 70, 229, 0.2);
+  color: var(--color-text);
+}
+
+/* Light theme header */
+body[data-theme="light"] .header::before {
+  background: radial-gradient(
+    circle,
+    rgba(99, 102, 241, 0.08) 0%,
+    transparent 70%
+  );
+}
+
+/* Light theme stat cards */
+body[data-theme="light"] .stat-card:hover::before {
+  opacity: 0.08;
+}
+
+body[data-theme="light"] .action-card:hover::before {
+  opacity: 0.08;
+}
+
+/* Light theme table */
+body[data-theme="light"] tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+body[data-theme="light"] tbody tr.overdue-row {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 4px solid var(--color-danger);
+}
+
+body[data-theme="light"] tbody tr.overdue-row:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* Light theme modal backdrop */
+body[data-theme="light"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+/* Light theme buttons */
+body[data-theme="light"] .btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+body[data-theme="light"] .btn-secondary:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+}
+
+/* Light theme notifications */
+body[data-theme="light"] #customNotification {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Light theme form errors */
+body[data-theme="light"] input.error,
+body[data-theme="light"] select.error {
+  background-color: rgba(239, 68, 68, 0.05);
+  border-color: var(--color-danger);
+}
+
+body[data-theme="light"] input.error:focus,
+body[data-theme="light"] select.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Light theme active tab */
+body[data-theme="light"] .tab-button.active {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.12) 0%,
+    rgba(79, 70, 229, 0.18) 100%
+  );
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* Light theme shadows for cards */
+body[data-theme="light"] .header,
+body[data-theme="light"] .tab-content,
+body[data-theme="light"] .form-container {
+  box-shadow: var(--shadow-lg);
+}
+
+body[data-theme="light"] .stat-card:hover,
+body[data-theme="light"] .action-card:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+/* Light theme list items */
+body[data-theme="light"] .list-item {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+body[data-theme="light"] .list-item:hover {
+  background: var(--color-bg-tertiary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Light theme navigation */
+body[data-theme="light"] .tabs {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+body[data-theme="light"] .tab-button:hover {
+  background: var(--color-bg-tertiary);
+}
+
+/* Light theme logo text gradient */
+body[data-theme="light"] .logo-text h1 {
+  background: linear-gradient(
+    135deg,
+    var(--color-text) 0%,
+    var(--color-primary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+body[data-theme="light"] .dashboard-title {
+  background: linear-gradient(
+    135deg,
+    var(--color-text) 0%,
+    var(--color-primary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light theme status badges */
+body[data-theme="light"] .status-issued {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning-dark);
+}
+
+body[data-theme="light"] .status-returned {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success-dark);
+}
