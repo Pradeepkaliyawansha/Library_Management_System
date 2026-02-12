@@ -46,60 +46,92 @@ class Transactions {
       return;
     }
 
-    // FIXED: Use DocumentFragment for better performance
-    const fragment = document.createDocumentFragment();
-    const tempDiv = document.createElement("div");
-
-    const rowsHtml = this.filteredData
-      .map((t) => {
-        const issueDate = new Date(t.issue_date).toLocaleDateString();
-        const dueDate = t.due_date
-          ? new Date(t.due_date).toLocaleDateString()
-          : "N/A";
-        const returnDate = t.return_date
-          ? new Date(t.return_date).toLocaleDateString()
-          : "-";
-
-        // Check if overdue
-        const isOverdue =
-          t.status === "issued" && new Date(t.due_date) < new Date();
-
-        // Determine which buttons to show
-        let deleteButton = "";
-        if (t.status === "returned") {
-          deleteButton = `<button class="btn-small btn-danger" onclick="deleteTransaction(${t.id})">Delete</button>`;
-        }
-
-        return `
-        <tr class="${isOverdue ? "overdue-row" : ""}">
-          <td>${t.student_id}</td>
-          <td>${t.student_name || "N/A"}</td>
-          <td>${t.book_title || "N/A"}</td>
-          <td>${issueDate}</td>
-          <td>${dueDate}</td>
-          <td>${returnDate}</td>
-          <td>
-            <div class="table-actions">
-              <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
-              ${t.status === "issued" ? `<button class="btn-small btn-warning" onclick="returnBook(${t.id})">Return</button>` : ""}
-              ${deleteButton}
-            </div>
-          </td>
-        </tr>
-      `;
-      })
-      .join("");
-
-    tempDiv.innerHTML = rowsHtml;
-
-    // Move all tr elements to fragment
-    while (tempDiv.firstChild) {
-      fragment.appendChild(tempDiv.firstChild);
-    }
-
-    // Clear and update in one operation
+    // Clear the table body first
     this.tableBody.innerHTML = "";
-    this.tableBody.appendChild(fragment);
+
+    // Create rows directly using DOM methods to ensure proper column structure
+    this.filteredData.forEach((t) => {
+      const issueDate = new Date(t.issue_date).toLocaleDateString();
+      const dueDate = t.due_date
+        ? new Date(t.due_date).toLocaleDateString()
+        : "N/A";
+      const returnDate = t.return_date
+        ? new Date(t.return_date).toLocaleDateString()
+        : "-";
+
+      // Check if overdue
+      const isOverdue =
+        t.status === "issued" && new Date(t.due_date) < new Date();
+
+      const row = document.createElement("tr");
+      if (isOverdue) {
+        row.className = "overdue-row";
+      }
+
+      // Student ID cell
+      const studentIdCell = document.createElement("td");
+      studentIdCell.textContent = t.student_id;
+      row.appendChild(studentIdCell);
+
+      // Student Name cell
+      const studentNameCell = document.createElement("td");
+      studentNameCell.textContent = t.student_name || "N/A";
+      row.appendChild(studentNameCell);
+
+      // Book Title cell
+      const bookTitleCell = document.createElement("td");
+      bookTitleCell.textContent = t.book_title || "N/A";
+      row.appendChild(bookTitleCell);
+
+      // Issue Date cell
+      const issueDateCell = document.createElement("td");
+      issueDateCell.textContent = issueDate;
+      row.appendChild(issueDateCell);
+
+      // Due Date cell
+      const dueDateCell = document.createElement("td");
+      dueDateCell.textContent = dueDate;
+      row.appendChild(dueDateCell);
+
+      // Return Date cell
+      const returnDateCell = document.createElement("td");
+      returnDateCell.textContent = returnDate;
+      row.appendChild(returnDateCell);
+
+      // Status/Actions cell
+      const actionsCell = document.createElement("td");
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "table-actions";
+
+      // Status badge
+      const statusBadge = document.createElement("span");
+      statusBadge.className = `status-badge status-${t.status}`;
+      statusBadge.textContent = t.status.toUpperCase();
+      actionsDiv.appendChild(statusBadge);
+
+      // Return button (only for issued books)
+      if (t.status === "issued") {
+        const returnBtn = document.createElement("button");
+        returnBtn.className = "btn-small btn-warning";
+        returnBtn.textContent = "Return";
+        returnBtn.onclick = () => this.returnBook(t.id);
+        actionsDiv.appendChild(returnBtn);
+      }
+
+      // Delete button (only for returned books)
+      if (t.status === "returned") {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-small btn-danger";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => this.deleteTransaction(t.id);
+        actionsDiv.appendChild(deleteBtn);
+      }
+
+      actionsCell.appendChild(actionsDiv);
+      row.appendChild(actionsCell);
+
+      this.tableBody.appendChild(row);
+    });
   }
 
   handleSearch() {
@@ -135,7 +167,6 @@ class Transactions {
         if (result.success) {
           showNotification("Book returned successfully!", "success");
 
-          // Reload transactions, books, and statistics
           await this.loadData();
 
           if (window.app) {
@@ -202,14 +233,12 @@ class Transactions {
     }
   }
 
-  // Helper method to get overdue transactions
   getOverdueTransactions() {
     return this.data.filter(
       (t) => t.status === "issued" && new Date(t.due_date) < new Date(),
     );
   }
 
-  // Helper method to get statistics
   getStatistics() {
     const issued = this.data.filter((t) => t.status === "issued").length;
     const returned = this.data.filter((t) => t.status === "returned").length;
@@ -223,7 +252,6 @@ class Transactions {
     };
   }
 
-  // FIXED: Added cleanup method
   destroy() {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);

@@ -56,7 +56,7 @@ class Books {
     window.hideIssueBookModal = () => this.hideIssueModal();
     window.issueBook = (e) => this.handleIssue(e);
     window.exportBooksToExcel = () => this.exportToExcel();
-    window.filterBooks = () => this.handleSearch(); // FIXED: Added global filter function
+    window.filterBooks = () => this.handleSearch();
   }
 
   async loadData() {
@@ -77,41 +77,77 @@ class Books {
       return;
     }
 
-    // FIXED: Use DocumentFragment for better performance
-    const fragment = document.createDocumentFragment();
-    const tempDiv = document.createElement("div");
-
-    tempDiv.innerHTML = this.filteredData
-      .map(
-        (book) => `
-        <tr>
-          <td>${book.isbn}</td>
-          <td>${book.title}</td>
-          <td>${book.author}</td>
-          <td>${book.publisher || "N/A"}</td>
-          <td>${book.category || "N/A"}</td>
-          <td>${book.total_copies}</td>
-          <td>${book.available_copies}</td>
-          <td>
-            <div class="table-actions">
-              <button class="btn-small btn-success" onclick="showIssueBookModal('${book.isbn}')" ${book.available_copies <= 0 ? "disabled" : ""}>Issue</button>
-              <button class="btn-small btn-primary" onclick="editBook('${book.isbn}')">Edit</button>
-              <button class="btn-small btn-danger" onclick="deleteBook('${book.isbn}')">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `,
-      )
-      .join("");
-
-    // Move all tr elements to fragment
-    while (tempDiv.firstChild) {
-      fragment.appendChild(tempDiv.firstChild);
-    }
-
-    // Clear and update in one operation
+    // Clear the table body first
     this.tableBody.innerHTML = "";
-    this.tableBody.appendChild(fragment);
+
+    // Create rows directly using DOM methods to ensure proper column structure
+    this.filteredData.forEach((book) => {
+      const row = document.createElement("tr");
+
+      // ISBN/Book No cell
+      const isbnCell = document.createElement("td");
+      isbnCell.textContent = book.isbn;
+      row.appendChild(isbnCell);
+
+      // Title cell
+      const titleCell = document.createElement("td");
+      titleCell.textContent = book.title;
+      row.appendChild(titleCell);
+
+      // Author cell
+      const authorCell = document.createElement("td");
+      authorCell.textContent = book.author;
+      row.appendChild(authorCell);
+
+      // Publisher cell
+      const publisherCell = document.createElement("td");
+      publisherCell.textContent = book.publisher || "N/A";
+      row.appendChild(publisherCell);
+
+      // Category cell
+      const categoryCell = document.createElement("td");
+      categoryCell.textContent = book.category || "N/A";
+      row.appendChild(categoryCell);
+
+      // Total Copies cell
+      const totalCell = document.createElement("td");
+      totalCell.textContent = book.total_copies;
+      row.appendChild(totalCell);
+
+      // Available Copies cell
+      const availableCell = document.createElement("td");
+      availableCell.textContent = book.available_copies;
+      row.appendChild(availableCell);
+
+      // Actions cell
+      const actionsCell = document.createElement("td");
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "table-actions";
+
+      const issueBtn = document.createElement("button");
+      issueBtn.className = "btn-small btn-success";
+      issueBtn.textContent = "Issue";
+      issueBtn.disabled = book.available_copies <= 0;
+      issueBtn.onclick = () => this.showIssueModal(book.isbn);
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn-small btn-primary";
+      editBtn.textContent = "Edit";
+      editBtn.onclick = () => this.edit(book.isbn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-small btn-danger";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () => this.delete(book.isbn);
+
+      actionsDiv.appendChild(issueBtn);
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(deleteBtn);
+      actionsCell.appendChild(actionsDiv);
+      row.appendChild(actionsCell);
+
+      this.tableBody.appendChild(row);
+    });
   }
 
   handleSearch() {
@@ -137,7 +173,7 @@ class Books {
     this.formContainer.style.display = "block";
     this.formTitle.textContent = "Add New Book";
     this.inputs.isbn.disabled = false;
-    this.inputs.isbn.readOnly = false; // FIXED: Added readOnly reset
+    this.inputs.isbn.readOnly = false;
     this.form.reset();
     this.formContainer.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -146,7 +182,6 @@ class Books {
     this.formContainer.style.display = "none";
     this.form.reset();
     this.editingBook = null;
-    // FIXED: Reset disabled state
     this.inputs.isbn.disabled = false;
     this.inputs.isbn.readOnly = false;
   }
@@ -159,7 +194,7 @@ class Books {
     this.formTitle.textContent = "Edit Book";
     this.inputs.isbn.value = book.isbn;
     this.inputs.isbn.disabled = true;
-    this.inputs.isbn.readOnly = true; // FIXED: Added readOnly for better form handling
+    this.inputs.isbn.readOnly = true;
     this.inputs.title.value = book.title;
     this.inputs.author.value = book.author;
     this.inputs.publisher.value = book.publisher || "";
@@ -210,7 +245,6 @@ class Books {
         showNotification(isEdit ? "Book updated!" : "Book added!", "success");
         await this.loadData();
 
-        // Refresh app statistics and dashboard
         if (window.app) {
           await window.app.loadStatistics();
           window.app.components.dashboard.update(
@@ -275,9 +309,8 @@ class Books {
     this.issueModalTitle.textContent = `Issue: ${book.title}`;
     this.issueModal.style.display = "block";
 
-    // FIXED: Add small delay to ensure modal is visible before focus
     setTimeout(() => {
-      this.issueInputs.studentId.value = ""; // Clear previous value
+      this.issueInputs.studentId.value = "";
       this.issueInputs.studentId.focus();
     }, 100);
   }
@@ -310,7 +343,6 @@ class Books {
       if (result.success) {
         showNotification("Book issued successfully!", "success");
 
-        // Reload books, transactions, and statistics
         await this.loadData();
 
         if (window.app) {
@@ -350,7 +382,6 @@ class Books {
     }
   }
 
-  // FIXED: Added cleanup method
   destroy() {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);

@@ -43,7 +43,7 @@ class Students {
     window.deleteStudent = (id) => this.delete(id);
     window.viewStudentBooks = (id) => this.viewBooks(id);
     window.exportStudentsToExcel = () => this.exportToExcel();
-    window.filterStudents = () => this.handleSearch(); // FIXED: Added global filter function
+    window.filterStudents = () => this.handleSearch();
   }
 
   async loadData() {
@@ -64,40 +64,71 @@ class Students {
       return;
     }
 
-    // FIXED: Use DocumentFragment for better performance
-    const fragment = document.createDocumentFragment();
-    const tempDiv = document.createElement("div");
-
-    tempDiv.innerHTML = this.filteredData
-      .map(
-        (student) => `
-        <tr>
-          <td>${student.student_id}</td>
-          <td>${student.name}</td>
-          <td>${student.email}</td>
-          <td>${student.phone || "N/A"}</td>
-          <td>${student.department || "N/A"}</td>
-          <td>${student.year || "N/A"}</td>
-          <td>
-            <div class="table-actions">
-              <button class="btn-small btn-info" onclick="viewStudentBooks('${student.student_id}')">Books</button>
-              <button class="btn-small btn-primary" onclick="editStudent('${student.student_id}')">Edit</button>
-              <button class="btn-small btn-danger" onclick="deleteStudent('${student.student_id}')">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `,
-      )
-      .join("");
-
-    // Move all tr elements to fragment
-    while (tempDiv.firstChild) {
-      fragment.appendChild(tempDiv.firstChild);
-    }
-
-    // Clear and update in one operation
+    // Clear the table body first
     this.tableBody.innerHTML = "";
-    this.tableBody.appendChild(fragment);
+
+    // Create rows directly using DOM methods to ensure proper column structure
+    this.filteredData.forEach((student) => {
+      const row = document.createElement("tr");
+
+      // Student ID cell
+      const idCell = document.createElement("td");
+      idCell.textContent = student.student_id;
+      row.appendChild(idCell);
+
+      // Name cell
+      const nameCell = document.createElement("td");
+      nameCell.textContent = student.name;
+      row.appendChild(nameCell);
+
+      // Email cell
+      const emailCell = document.createElement("td");
+      emailCell.textContent = student.email;
+      row.appendChild(emailCell);
+
+      // Phone cell
+      const phoneCell = document.createElement("td");
+      phoneCell.textContent = student.phone || "N/A";
+      row.appendChild(phoneCell);
+
+      // Department cell
+      const deptCell = document.createElement("td");
+      deptCell.textContent = student.department || "N/A";
+      row.appendChild(deptCell);
+
+      // Year cell
+      const yearCell = document.createElement("td");
+      yearCell.textContent = student.year || "N/A";
+      row.appendChild(yearCell);
+
+      // Actions cell
+      const actionsCell = document.createElement("td");
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "table-actions";
+
+      const booksBtn = document.createElement("button");
+      booksBtn.className = "btn-small btn-info";
+      booksBtn.textContent = "Books";
+      booksBtn.onclick = () => this.viewBooks(student.student_id);
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn-small btn-primary";
+      editBtn.textContent = "Edit";
+      editBtn.onclick = () => this.edit(student.student_id);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-small btn-danger";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () => this.delete(student.student_id);
+
+      actionsDiv.appendChild(booksBtn);
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(deleteBtn);
+      actionsCell.appendChild(actionsDiv);
+      row.appendChild(actionsCell);
+
+      this.tableBody.appendChild(row);
+    });
   }
 
   handleSearch() {
@@ -123,7 +154,7 @@ class Students {
     this.formContainer.style.display = "block";
     this.formTitle.textContent = "Add New Student";
     this.inputs.studentId.disabled = false;
-    this.inputs.studentId.readOnly = false; // FIXED: Added readOnly reset
+    this.inputs.studentId.readOnly = false;
     this.form.reset();
     this.formContainer.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -132,7 +163,6 @@ class Students {
     this.formContainer.style.display = "none";
     this.form.reset();
     this.editingStudent = null;
-    // FIXED: Reset disabled state
     this.inputs.studentId.disabled = false;
     this.inputs.studentId.readOnly = false;
   }
@@ -145,7 +175,7 @@ class Students {
     this.formTitle.textContent = "Edit Student";
     this.inputs.studentId.value = student.student_id;
     this.inputs.studentId.disabled = true;
-    this.inputs.studentId.readOnly = true; // FIXED: Added readOnly for better form handling
+    this.inputs.studentId.readOnly = true;
     this.inputs.name.value = student.name;
     this.inputs.email.value = student.email;
     this.inputs.phone.value = student.phone || "";
@@ -193,7 +223,6 @@ class Students {
         );
         await this.loadData();
 
-        // Refresh app statistics
         if (window.app) {
           await window.app.loadStatistics();
           window.app.components.dashboard.update(
@@ -295,7 +324,6 @@ class Students {
     }
   }
 
-  // FIXED: Added cleanup method
   destroy() {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
