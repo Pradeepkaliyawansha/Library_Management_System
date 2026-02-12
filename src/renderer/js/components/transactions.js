@@ -42,7 +42,7 @@ class Transactions {
   render() {
     if (this.filteredData.length === 0) {
       this.tableBody.innerHTML =
-        '<tr><td colspan="7" style="text-align: center;">No transactions found</td></tr>';
+        '<tr><td colspan="8" style="text-align: center;">No transactions found</td></tr>';
       return;
     }
 
@@ -77,6 +77,12 @@ class Transactions {
       const studentNameCell = document.createElement("td");
       studentNameCell.textContent = t.student_name || "N/A";
       row.appendChild(studentNameCell);
+
+      // ISBN cell (NEW!)
+      const isbnCell = document.createElement("td");
+      isbnCell.textContent = t.isbn || "N/A";
+      isbnCell.style.fontFamily = "monospace"; // Better readability for ISBNs
+      row.appendChild(isbnCell);
 
       // Book Title cell
       const bookTitleCell = document.createElement("td");
@@ -146,7 +152,8 @@ class Transactions {
           t.student_id.toLowerCase().includes(searchTerm) ||
           (t.student_name &&
             t.student_name.toLowerCase().includes(searchTerm)) ||
-          (t.book_title && t.book_title.toLowerCase().includes(searchTerm)),
+          (t.book_title && t.book_title.toLowerCase().includes(searchTerm)) ||
+          (t.isbn && t.isbn.toLowerCase().includes(searchTerm)), // NEW: Search by ISBN
       );
       this.render();
     }, 150);

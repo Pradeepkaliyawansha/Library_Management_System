@@ -469,7 +469,7 @@
           type="text"
           id="transactionSearch"
           class="search-input"
-          placeholder="Search transactions by student ID, name, or book title..."
+          placeholder="Search transactions by student ID, student name,book No or book title..."
           onkeyup="filterTransactions()"
           autocomplete="off"
         />
@@ -481,6 +481,7 @@
               <tr>
                 <th>Student ID</th>
                 <th>Student Name</th>
+                <th>Book No.</th>
                 <th>Book Title</th>
                 <th>Issue Date</th>
                 <th>Due Date</th>
@@ -490,7 +491,7 @@
             </thead>
             <tbody id="transactionsTableBody">
               <tr>
-                <td colspan="7" style="text-align: center">
+                <td colspan="8" style="text-align: center">
                   Loading transactions...
                 </td>
               </tr>
