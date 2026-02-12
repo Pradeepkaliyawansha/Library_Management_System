@@ -81,7 +81,7 @@ tbody {
 }
 
 td {
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   vertical-align: middle;
@@ -131,45 +131,254 @@ tbody tr.overdue-row td:first-child {
 
 /* Status Badges */
 .status-badge {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-wide);
-  display: inline-block;
-  margin-right: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   white-space: nowrap;
 }
 
 .status-issued {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.15);
   color: var(--color-warning);
-  border: 1px solid var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .status-returned {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.15);
   color: var(--color-success);
-  border: 1px solid var(--color-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .status-overdue {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   color: var(--color-danger);
-  border: 1px solid var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Table Actions */
+/* ==================== TABLE ACTIONS — REDESIGNED ==================== */
+
 .table-actions {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-  justify-content: flex-start;
   align-items: center;
+  justify-content: flex-start;
 }
 
-/* Empty State */
+/* Base small button — clean, modern pill style */
+.btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  /* Flex behaviour: buttons share available space and shrink gracefully */
+  flex: 1 1 auto;
+  min-width: fit-content;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.14s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+  background-clip: padding-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ripple on click */
+.btn-small::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.btn-small:active::after {
+  opacity: 1;
+}
+
+.btn-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-small:active {
+  transform: translateY(0px) scale(0.97);
+  box-shadow: none;
+}
+
+.btn-small:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Issue / Success — green */
+.btn-small.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+.btn-small.btn-success:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+/* Edit / Primary — indigo */
+.btn-small.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+.btn-small.btn-primary:hover {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  border-color: rgba(129, 140, 248, 0.5);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+/* Delete / Danger — red */
+.btn-small.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.22);
+}
+
+.btn-small.btn-danger:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  border-color: rgba(248, 113, 113, 0.5);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+/* Return / Warning — amber */
+.btn-small.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.22);
+}
+
+.btn-small.btn-warning:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+/* Books / Info — sky blue */
+.btn-small.btn-info {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.22);
+}
+
+.btn-small.btn-info:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+/* Light-theme overrides: ghost-style (outlined + tinted bg) instead of solid */
+body[data-theme="light"] .btn-small.btn-success {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.55);
+  color: #047857;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .btn-small.btn-success:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  color: #047857;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.22);
+}
+
+body[data-theme="light"] .btn-small.btn-primary {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.55);
+  color: #3730a3;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .btn-small.btn-primary:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: #6366f1;
+  color: #3730a3;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.22);
+}
+
+body[data-theme="light"] .btn-small.btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #b91c1c;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .btn-small.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #b91c1c;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.2);
+}
+
+body[data-theme="light"] .btn-small.btn-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #92400e;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .btn-small.btn-warning:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.2);
+}
+
+body[data-theme="light"] .btn-small.btn-info {
+  background: rgba(59, 130, 246, 0.09);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #1d4ed8;
+  box-shadow: none;
+}
+
+body[data-theme="light"] .btn-small.btn-info:hover {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.2);
+}
+
+/* ==================== Empty State ==================== */
+
 tbody tr td[colspan] {
   text-align: center;
   padding: var(--space-12) var(--space-6);
@@ -254,10 +463,24 @@ table.loading::after {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
 }
 
-/* Mobile Table Styles */
+/* ==================== RESPONSIVE ==================== */
+
+/* Tablet — compact buttons, keep them in a row */
+@media (max-width: 1024px) {
+  .table-actions {
+    gap: var(--space-1);
+  }
+
+  .btn-small {
+    padding: 4px 10px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Mobile — stacked layout inside cells */
 @media (max-width: 768px) {
   .table-container {
     border-radius: var(--radius-md);
@@ -282,27 +505,33 @@ table.loading::after {
     padding-right: var(--space-3);
   }
 
+  /* Actions column: stack vertically, full width */
   .table-actions {
     flex-direction: column;
-    width: 100%;
+    align-items: stretch;
+    gap: var(--space-1);
+    min-width: 88px;
   }
 
-  .table-actions button {
+  .btn-small {
     width: 100%;
-    padding: var(--space-2);
+    padding: 8px; /* Larger tap target for mobile — from styles.css */
+    font-size: 0.7rem;
+    border-radius: var(--radius-md);
+    justify-content: center;
   }
 
   /* Hide less important columns on mobile */
-  th:nth-child(3),
-  td:nth-child(3),
   th:nth-child(4),
-  td:nth-child(4) {
+  td:nth-child(4),
+  th:nth-child(5),
+  td:nth-child(5) {
     display: none;
   }
 }
 
+/* Small mobile — card-stack layout */
 @media (max-width: 480px) {
-  /* Stack table for very small screens */
   .table-container.stack-on-mobile table,
   .table-container.stack-on-mobile thead,
   .table-container.stack-on-mobile tbody,
@@ -338,6 +567,19 @@ table.loading::after {
     padding-right: var(--space-2);
     font-weight: var(--font-weight-bold);
     color: var(--color-text);
+  }
+
+  /* On card layout, actions go full width horizontal again */
+  .table-container.stack-on-mobile .table-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 0;
+    margin-top: var(--space-2);
+  }
+
+  .table-container.stack-on-mobile .table-actions .btn-small {
+    flex: 1 1 auto;
+    min-width: fit-content;
   }
 }
 
