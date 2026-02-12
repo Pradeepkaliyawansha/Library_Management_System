@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
     />
     <title>Library Management System</title>
 
@@ -306,17 +306,18 @@
           </form>
         </div>
 
-        <!-- Students Table -->
-        <div class="table-container">
-          <input
-            type="text"
-            id="studentSearch"
-            class="search-input"
-            placeholder="🔍 Search students by ID, name, email, or department..."
-            onkeyup="filterStudents()"
-            autocomplete="off"
-          />
+        <!-- FIX: Search input is now OUTSIDE .table-container so the table
+             border, border-radius, sticky thead, and overflow all work correctly -->
+        <input
+          type="text"
+          id="studentSearch"
+          class="search-input"
+          placeholder="🔍 Search students by ID, name, email, or department..."
+          onkeyup="filterStudents()"
+          autocomplete="off"
+        />
 
+        <div class="table-container">
           <table id="studentsTable">
             <thead>
               <tr>
@@ -417,17 +418,17 @@
           </form>
         </div>
 
-        <!-- Books Table -->
-        <div class="table-container">
-          <input
-            type="text"
-            id="bookSearch"
-            class="search-input"
-            placeholder="🔍 Search books by ISBN, title, author, or category..."
-            onkeyup="filterBooks()"
-            autocomplete="off"
-          />
+        <!-- FIX: Search input outside .table-container -->
+        <input
+          type="text"
+          id="bookSearch"
+          class="search-input"
+          placeholder="🔍 Search books by ISBN, title, author, or category..."
+          onkeyup="filterBooks()"
+          autocomplete="off"
+        />
 
+        <div class="table-container">
           <table id="booksTable">
             <thead>
               <tr>
@@ -462,17 +463,17 @@
           </button>
         </div>
 
-        <!-- Transactions Table -->
-        <div class="table-container">
-          <input
-            type="text"
-            id="transactionSearch"
-            class="search-input"
-            placeholder="🔍 Search transactions by student ID, name, or book title..."
-            onkeyup="filterTransactions()"
-            autocomplete="off"
-          />
+        <!-- FIX: Search input outside .table-container -->
+        <input
+          type="text"
+          id="transactionSearch"
+          class="search-input"
+          placeholder="🔍 Search transactions by student ID, name, or book title..."
+          onkeyup="filterTransactions()"
+          autocomplete="off"
+        />
 
+        <div class="table-container">
           <table id="transactionsTable">
             <thead>
               <tr>
@@ -533,7 +534,10 @@
       </div>
     </div>
 
-    <!-- Main Application Script -->
-    <script src="js/app.js"></script>
+    <!-- Use require() so Node resolves __dirname from the JS file's
+         own directory, fixing all chained require() module paths. -->
+    <script>
+      require("./js/app.js");
+    </script>
   </body>
 </html>
