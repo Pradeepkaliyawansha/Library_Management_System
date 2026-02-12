@@ -71,19 +71,37 @@ class App {
     const startTime = performance.now();
 
     try {
-      // Load all data in parallel
-      await Promise.all([
+      // FIXED: Use Promise.allSettled to handle partial failures
+      const results = await Promise.allSettled([
         this.loadStatistics(),
         this.components.students.loadData(),
         this.components.books.loadData(),
         this.components.transactions.loadData(),
       ]);
 
-      // Update dashboard
-      this.components.dashboard.update(
-        this.components.students.data,
-        this.components.books.data,
-      );
+      // Check for failures
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const componentNames = [
+            "statistics",
+            "students",
+            "books",
+            "transactions",
+          ];
+          console.error(
+            `Failed to load ${componentNames[index]}:`,
+            result.reason,
+          );
+        }
+      });
+
+      // FIXED: Update dashboard only if we have data
+      if (this.components.students.data && this.components.books.data) {
+        this.components.dashboard.update(
+          this.components.students.data,
+          this.components.books.data,
+        );
+      }
 
       const endTime = performance.now();
       console.log(`Data loaded in ${(endTime - startTime).toFixed(2)}ms`);
@@ -99,15 +117,28 @@ class App {
       this.updateStatisticsDisplay(stats);
     } catch (error) {
       console.error("Error loading statistics:", error);
+      // Show default values instead of failing completely
+      this.updateStatisticsDisplay({
+        totalStudents: 0,
+        totalBooks: 0,
+        availableCopies: 0,
+        issuedBooks: 0,
+      });
     }
   }
 
   updateStatisticsDisplay(stats) {
-    document.getElementById("totalStudents").textContent = stats.totalStudents;
-    document.getElementById("totalBooks").textContent = stats.totalBooks;
-    document.getElementById("availableCopies").textContent =
-      stats.availableCopies;
-    document.getElementById("issuedBooks").textContent = stats.issuedBooks;
+    const updateElement = (id, value) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = value;
+      }
+    };
+
+    updateElement("totalStudents", stats.totalStudents);
+    updateElement("totalBooks", stats.totalBooks);
+    updateElement("availableCopies", stats.availableCopies);
+    updateElement("issuedBooks", stats.issuedBooks);
   }
 
   showTab(tabName) {
@@ -119,7 +150,10 @@ class App {
     buttons.forEach((btn) => btn.classList.remove("active"));
 
     // Show selected tab
-    document.getElementById(tabName).classList.add("active");
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+      selectedTab.classList.add("active");
+    }
 
     const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeButton) {
@@ -132,6 +166,20 @@ class App {
   async refreshData() {
     await this.loadInitialData();
   }
+
+  // FIXED: Added cleanup method
+  destroy() {
+    // Cleanup all components
+    if (this.components.students) {
+      this.components.students.destroy();
+    }
+    if (this.components.books) {
+      this.components.books.destroy();
+    }
+    if (this.components.transactions) {
+      this.components.transactions.destroy();
+    }
+  }
 }
 
 // Initialize app when DOM is ready
@@ -141,6 +189,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Make app instance globally available
   window.app = app;
+});
+
+// FIXED: Cleanup on window unload
+window.addEventListener("beforeunload", () => {
+  if (window.app) {
+    window.app.destroy();
+  }
 });
 
 module.exports = App;

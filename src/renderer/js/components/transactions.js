@@ -46,7 +46,11 @@ class Transactions {
       return;
     }
 
-    this.tableBody.innerHTML = this.filteredData
+    // FIXED: Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement("div");
+
+    const rowsHtml = this.filteredData
       .map((t) => {
         const issueDate = new Date(t.issue_date).toLocaleDateString();
         const dueDate = t.due_date
@@ -67,24 +71,35 @@ class Transactions {
         }
 
         return `
-          <tr class="${isOverdue ? "overdue-row" : ""}">
-            <td>${t.student_id}</td>
-            <td>${t.student_name || "N/A"}</td>
-            <td>${t.book_title || "N/A"}</td>
-            <td>${issueDate}</td>
-            <td>${dueDate}</td>
-            <td>${returnDate}</td>
-            <td>
-              <div class="table-actions">
-                <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
-                ${t.status === "issued" ? `<button class="btn-small btn-warning" onclick="returnBook(${t.id})">Return</button>` : ""}
-                ${deleteButton}
-              </div>
-            </td>
-          </tr>
-        `;
+        <tr class="${isOverdue ? "overdue-row" : ""}">
+          <td>${t.student_id}</td>
+          <td>${t.student_name || "N/A"}</td>
+          <td>${t.book_title || "N/A"}</td>
+          <td>${issueDate}</td>
+          <td>${dueDate}</td>
+          <td>${returnDate}</td>
+          <td>
+            <div class="table-actions">
+              <span class="status-badge status-${t.status}">${t.status.toUpperCase()}</span>
+              ${t.status === "issued" ? `<button class="btn-small btn-warning" onclick="returnBook(${t.id})">Return</button>` : ""}
+              ${deleteButton}
+            </div>
+          </td>
+        </tr>
+      `;
       })
       .join("");
+
+    tempDiv.innerHTML = rowsHtml;
+
+    // Move all tr elements to fragment
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
+
+    // Clear and update in one operation
+    this.tableBody.innerHTML = "";
+    this.tableBody.appendChild(fragment);
   }
 
   handleSearch() {
@@ -126,6 +141,10 @@ class Transactions {
           if (window.app) {
             await window.app.components.books.loadData();
             await window.app.loadStatistics();
+            window.app.components.dashboard.update(
+              window.app.components.students.data,
+              window.app.components.books.data,
+            );
           }
         } else {
           showNotification(`Error: ${result.error}`, "error");
@@ -202,6 +221,14 @@ class Transactions {
       returned,
       overdue,
     };
+  }
+
+  // FIXED: Added cleanup method
+  destroy() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
   }
 }
 

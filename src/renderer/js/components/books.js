@@ -56,6 +56,7 @@ class Books {
     window.hideIssueBookModal = () => this.hideIssueModal();
     window.issueBook = (e) => this.handleIssue(e);
     window.exportBooksToExcel = () => this.exportToExcel();
+    window.filterBooks = () => this.handleSearch(); // FIXED: Added global filter function
   }
 
   async loadData() {
@@ -76,7 +77,11 @@ class Books {
       return;
     }
 
-    this.tableBody.innerHTML = this.filteredData
+    // FIXED: Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement("div");
+
+    tempDiv.innerHTML = this.filteredData
       .map(
         (book) => `
         <tr>
@@ -98,6 +103,15 @@ class Books {
       `,
       )
       .join("");
+
+    // Move all tr elements to fragment
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
+
+    // Clear and update in one operation
+    this.tableBody.innerHTML = "";
+    this.tableBody.appendChild(fragment);
   }
 
   handleSearch() {
@@ -123,6 +137,7 @@ class Books {
     this.formContainer.style.display = "block";
     this.formTitle.textContent = "Add New Book";
     this.inputs.isbn.disabled = false;
+    this.inputs.isbn.readOnly = false; // FIXED: Added readOnly reset
     this.form.reset();
     this.formContainer.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -131,6 +146,9 @@ class Books {
     this.formContainer.style.display = "none";
     this.form.reset();
     this.editingBook = null;
+    // FIXED: Reset disabled state
+    this.inputs.isbn.disabled = false;
+    this.inputs.isbn.readOnly = false;
   }
 
   edit(isbn) {
@@ -141,6 +159,7 @@ class Books {
     this.formTitle.textContent = "Edit Book";
     this.inputs.isbn.value = book.isbn;
     this.inputs.isbn.disabled = true;
+    this.inputs.isbn.readOnly = true; // FIXED: Added readOnly for better form handling
     this.inputs.title.value = book.title;
     this.inputs.author.value = book.author;
     this.inputs.publisher.value = book.publisher || "";
@@ -164,11 +183,11 @@ class Books {
     const totalCopies = parseInt(this.inputs.totalCopies.value);
 
     const book = {
-      isbn: this.inputs.isbn.value,
-      title: this.inputs.title.value,
-      author: this.inputs.author.value,
-      publisher: this.inputs.publisher.value,
-      category: this.inputs.category.value,
+      isbn: this.inputs.isbn.value.trim(),
+      title: this.inputs.title.value.trim(),
+      author: this.inputs.author.value.trim(),
+      publisher: this.inputs.publisher.value.trim(),
+      category: this.inputs.category.value.trim(),
       total_copies: totalCopies,
       available_copies: this.editingBook
         ? this.editingBook.available_copies +
@@ -255,7 +274,12 @@ class Books {
     this.issueInputs.isbn.value = isbn;
     this.issueModalTitle.textContent = `Issue: ${book.title}`;
     this.issueModal.style.display = "block";
-    this.issueInputs.studentId.focus();
+
+    // FIXED: Add small delay to ensure modal is visible before focus
+    setTimeout(() => {
+      this.issueInputs.studentId.value = ""; // Clear previous value
+      this.issueInputs.studentId.focus();
+    }, 100);
   }
 
   hideIssueModal() {
@@ -274,8 +298,8 @@ class Books {
     this.operationInProgress = true;
 
     const transaction = {
-      student_id: this.issueInputs.studentId.value,
-      isbn: this.issueInputs.isbn.value,
+      student_id: this.issueInputs.studentId.value.trim(),
+      isbn: this.issueInputs.isbn.value.trim(),
     };
 
     this.hideIssueModal();
@@ -323,6 +347,14 @@ class Books {
       }
     } catch (error) {
       showNotification(`Export error: ${error.message}`, "error");
+    }
+  }
+
+  // FIXED: Added cleanup method
+  destroy() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
     }
   }
 }

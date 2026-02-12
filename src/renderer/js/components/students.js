@@ -43,6 +43,7 @@ class Students {
     window.deleteStudent = (id) => this.delete(id);
     window.viewStudentBooks = (id) => this.viewBooks(id);
     window.exportStudentsToExcel = () => this.exportToExcel();
+    window.filterStudents = () => this.handleSearch(); // FIXED: Added global filter function
   }
 
   async loadData() {
@@ -63,7 +64,11 @@ class Students {
       return;
     }
 
-    this.tableBody.innerHTML = this.filteredData
+    // FIXED: Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement("div");
+
+    tempDiv.innerHTML = this.filteredData
       .map(
         (student) => `
         <tr>
@@ -84,6 +89,15 @@ class Students {
       `,
       )
       .join("");
+
+    // Move all tr elements to fragment
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
+
+    // Clear and update in one operation
+    this.tableBody.innerHTML = "";
+    this.tableBody.appendChild(fragment);
   }
 
   handleSearch() {
@@ -109,6 +123,7 @@ class Students {
     this.formContainer.style.display = "block";
     this.formTitle.textContent = "Add New Student";
     this.inputs.studentId.disabled = false;
+    this.inputs.studentId.readOnly = false; // FIXED: Added readOnly reset
     this.form.reset();
     this.formContainer.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -117,6 +132,9 @@ class Students {
     this.formContainer.style.display = "none";
     this.form.reset();
     this.editingStudent = null;
+    // FIXED: Reset disabled state
+    this.inputs.studentId.disabled = false;
+    this.inputs.studentId.readOnly = false;
   }
 
   edit(studentId) {
@@ -127,6 +145,7 @@ class Students {
     this.formTitle.textContent = "Edit Student";
     this.inputs.studentId.value = student.student_id;
     this.inputs.studentId.disabled = true;
+    this.inputs.studentId.readOnly = true; // FIXED: Added readOnly for better form handling
     this.inputs.name.value = student.name;
     this.inputs.email.value = student.email;
     this.inputs.phone.value = student.phone || "";
@@ -148,11 +167,11 @@ class Students {
     this.operationInProgress = true;
 
     const student = {
-      student_id: this.inputs.studentId.value,
-      name: this.inputs.name.value,
-      email: this.inputs.email.value,
-      phone: this.inputs.phone.value,
-      department: this.inputs.department.value,
+      student_id: this.inputs.studentId.value.trim(),
+      name: this.inputs.name.value.trim(),
+      email: this.inputs.email.value.trim(),
+      phone: this.inputs.phone.value.trim(),
+      department: this.inputs.department.value.trim(),
       year: this.inputs.year.value,
     };
 
@@ -273,6 +292,14 @@ class Students {
       }
     } catch (error) {
       showNotification(`Export error: ${error.message}`, "error");
+    }
+  }
+
+  // FIXED: Added cleanup method
+  destroy() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
     }
   }
 }

@@ -1,8 +1,10 @@
 const { BrowserWindow } = require("electron");
 const path = require("path");
 
+let mainWindow = null;
+
 function createMainWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
@@ -38,4 +40,9 @@ function createMainWindow() {
   return mainWindow;
 }
 
-module.exports = { createMainWindow };
+// FIXED: Added getter function
+function getMainWindow() {
+  return mainWindow;
+}
+
+module.exports = { createMainWindow, getMainWindow };
