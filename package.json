@@ -39,6 +39,7 @@
     "url": "https://github.com/Pradeepkaliyawansha/Library_Management_System/issues"
   },
   "dependencies": {
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.7.3",
     "exceljs": "^4.4.0",
     "sql.js": "^1.8.0"
