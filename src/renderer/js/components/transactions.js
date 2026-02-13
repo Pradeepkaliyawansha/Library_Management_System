@@ -7,6 +7,7 @@ class Transactions {
     this.filteredData = [];
     this.operationInProgress = false;
     this.searchTimeout = null;
+    this.isRendering = false;
 
     this.initElements();
     this.setupEventListeners();
@@ -40,104 +41,114 @@ class Transactions {
   }
 
   render() {
+    // Prevent multiple simultaneous renders
+    if (this.isRendering) {
+      return;
+    }
+
+    this.isRendering = true;
+
+    // Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(() => {
+      this._performRender();
+      this.isRendering = false;
+    });
+  }
+
+  _performRender() {
     if (this.filteredData.length === 0) {
       this.tableBody.innerHTML =
         '<tr><td colspan="8" style="text-align: center;">No transactions found</td></tr>';
       return;
     }
 
-    // Clear the table body first
-    this.tableBody.innerHTML = "";
+    // Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
 
-    // Create rows directly using DOM methods to ensure proper column structure
     this.filteredData.forEach((t) => {
-      const issueDate = new Date(t.issue_date).toLocaleDateString();
-      const dueDate = t.due_date
-        ? new Date(t.due_date).toLocaleDateString()
-        : "N/A";
-      const returnDate = t.return_date
-        ? new Date(t.return_date).toLocaleDateString()
-        : "-";
-
-      // Check if overdue
-      const isOverdue =
-        t.status === "issued" && new Date(t.due_date) < new Date();
-
-      const row = document.createElement("tr");
-      if (isOverdue) {
-        row.className = "overdue-row";
-      }
-
-      // Student ID cell
-      const studentIdCell = document.createElement("td");
-      studentIdCell.textContent = t.student_id;
-      row.appendChild(studentIdCell);
-
-      // Student Name cell
-      const studentNameCell = document.createElement("td");
-      studentNameCell.textContent = t.student_name || "N/A";
-      row.appendChild(studentNameCell);
-
-      // ISBN cell (NEW!)
-      const isbnCell = document.createElement("td");
-      isbnCell.textContent = t.isbn || "N/A";
-      isbnCell.style.fontFamily = "monospace"; // Better readability for ISBNs
-      row.appendChild(isbnCell);
-
-      // Book Title cell
-      const bookTitleCell = document.createElement("td");
-      bookTitleCell.textContent = t.book_title || "N/A";
-      row.appendChild(bookTitleCell);
-
-      // Issue Date cell
-      const issueDateCell = document.createElement("td");
-      issueDateCell.textContent = issueDate;
-      row.appendChild(issueDateCell);
-
-      // Due Date cell
-      const dueDateCell = document.createElement("td");
-      dueDateCell.textContent = dueDate;
-      row.appendChild(dueDateCell);
-
-      // Return Date cell
-      const returnDateCell = document.createElement("td");
-      returnDateCell.textContent = returnDate;
-      row.appendChild(returnDateCell);
-
-      // Status/Actions cell
-      const actionsCell = document.createElement("td");
-      const actionsDiv = document.createElement("div");
-      actionsDiv.className = "table-actions";
-
-      // Status badge
-      const statusBadge = document.createElement("span");
-      statusBadge.className = `status-badge status-${t.status}`;
-      statusBadge.textContent = t.status.toUpperCase();
-      actionsDiv.appendChild(statusBadge);
-
-      // Return button (only for issued books)
-      if (t.status === "issued") {
-        const returnBtn = document.createElement("button");
-        returnBtn.className = "btn-small btn-warning";
-        returnBtn.textContent = "Return";
-        returnBtn.onclick = () => this.returnBook(t.id);
-        actionsDiv.appendChild(returnBtn);
-      }
-
-      // Delete button (only for returned books)
-      if (t.status === "returned") {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn-small btn-danger";
-        deleteBtn.textContent = "Delete";
-        deleteBtn.onclick = () => this.deleteTransaction(t.id);
-        actionsDiv.appendChild(deleteBtn);
-      }
-
-      actionsCell.appendChild(actionsDiv);
-      row.appendChild(actionsCell);
-
-      this.tableBody.appendChild(row);
+      const row = this._createTransactionRow(t);
+      fragment.appendChild(row);
     });
+
+    // Single DOM update
+    this.tableBody.innerHTML = "";
+    this.tableBody.appendChild(fragment);
+  }
+
+  _createTransactionRow(t) {
+    const issueDate = new Date(t.issue_date).toLocaleDateString();
+    const dueDate = t.due_date
+      ? new Date(t.due_date).toLocaleDateString()
+      : "N/A";
+    const returnDate = t.return_date
+      ? new Date(t.return_date).toLocaleDateString()
+      : "-";
+
+    const isOverdue =
+      t.status === "issued" && new Date(t.due_date) < new Date();
+
+    const row = document.createElement("tr");
+    if (isOverdue) {
+      row.className = "overdue-row";
+    }
+
+    // Store transaction ID as data attribute for faster access
+    row.dataset.transactionId = t.id;
+
+    // Build row HTML in one go for better performance
+    row.innerHTML = `
+      <td>${this._escapeHtml(t.student_id)}</td>
+      <td>${this._escapeHtml(t.student_name || "N/A")}</td>
+      <td style="font-family: monospace">${this._escapeHtml(t.isbn || "N/A")}</td>
+      <td>${this._escapeHtml(t.book_title || "N/A")}</td>
+      <td>${issueDate}</td>
+      <td>${dueDate}</td>
+      <td>${returnDate}</td>
+      <td>
+        <div class="table-actions">
+          ${this._getStatusBadgeHtml(t.status)}
+          ${this._getActionButtonsHtml(t)}
+        </div>
+      </td>
+    `;
+
+    // Add event listeners after row creation
+    this._attachEventListeners(row, t);
+
+    return row;
+  }
+
+  _getStatusBadgeHtml(status) {
+    return `<span class="status-badge status-${status}">${status.toUpperCase()}</span>`;
+  }
+
+  _getActionButtonsHtml(transaction) {
+    if (transaction.status === "issued") {
+      return `<button class="btn-small btn-warning return-btn" data-id="${transaction.id}">Return</button>`;
+    } else if (transaction.status === "returned") {
+      return `<button class="btn-small btn-danger delete-btn" data-id="${transaction.id}">Delete</button>`;
+    }
+    return "";
+  }
+
+  _attachEventListeners(row, transaction) {
+    // Use event delegation for better performance
+    const returnBtn = row.querySelector(".return-btn");
+    const deleteBtn = row.querySelector(".delete-btn");
+
+    if (returnBtn) {
+      returnBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.returnBook(transaction.id);
+      };
+    }
+
+    if (deleteBtn) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.deleteTransaction(transaction.id);
+      };
+    }
   }
 
   handleSearch() {
@@ -147,14 +158,20 @@ class Transactions {
 
     this.searchTimeout = setTimeout(() => {
       const searchTerm = this.searchInput.value.toLowerCase();
-      this.filteredData = this.data.filter(
-        (t) =>
-          t.student_id.toLowerCase().includes(searchTerm) ||
-          (t.student_name &&
-            t.student_name.toLowerCase().includes(searchTerm)) ||
-          (t.book_title && t.book_title.toLowerCase().includes(searchTerm)) ||
-          (t.isbn && t.isbn.toLowerCase().includes(searchTerm)), // NEW: Search by ISBN
-      );
+
+      if (!searchTerm) {
+        this.filteredData = [...this.data];
+      } else {
+        this.filteredData = this.data.filter(
+          (t) =>
+            t.student_id.toLowerCase().includes(searchTerm) ||
+            (t.student_name &&
+              t.student_name.toLowerCase().includes(searchTerm)) ||
+            (t.book_title && t.book_title.toLowerCase().includes(searchTerm)) ||
+            (t.isbn && t.isbn.toLowerCase().includes(searchTerm)),
+        );
+      }
+
       this.render();
     }, 150);
   }
@@ -165,33 +182,38 @@ class Transactions {
       return;
     }
 
-    if (confirm("Mark this book as returned?")) {
-      this.operationInProgress = true;
+    if (!confirm("Mark this book as returned?")) {
+      return;
+    }
 
-      try {
-        const result = await api.returnBook(transactionId);
+    this.operationInProgress = true;
 
-        if (result.success) {
-          showNotification("Book returned successfully!", "success");
+    // Show loading state on the specific row
+    this._showRowLoading(transactionId);
 
-          await this.loadData();
+    try {
+      const result = await api.returnBook(transactionId);
 
-          if (window.app) {
-            await window.app.components.books.loadData();
-            await window.app.loadStatistics();
-            window.app.components.dashboard.update(
-              window.app.components.students.data,
-              window.app.components.books.data,
-            );
-          }
-        } else {
-          showNotification(`Error: ${result.error}`, "error");
-        }
-      } catch (error) {
-        showNotification(`Error: ${error.message}`, "error");
-      } finally {
-        this.operationInProgress = false;
+      if (result.success) {
+        showNotification("Book returned successfully!", "success");
+
+        // Optimistic UI update - update only the affected row
+        this._optimisticUpdateReturn(transactionId);
+
+        // Update statistics in background
+        this._updateStatisticsInBackground();
+
+        // Reload full data in background
+        this.loadData();
+      } else {
+        showNotification(`Error: ${result.error}`, "error");
+        this._removeRowLoading(transactionId);
       }
+    } catch (error) {
+      showNotification(`Error: ${error.message}`, "error");
+      this._removeRowLoading(transactionId);
+    } finally {
+      this.operationInProgress = false;
     }
   }
 
@@ -201,24 +223,140 @@ class Transactions {
       return;
     }
 
-    if (confirm("Are you sure you want to delete this transaction record?")) {
-      this.operationInProgress = true;
+    if (!confirm("Are you sure you want to delete this transaction record?")) {
+      return;
+    }
 
-      try {
-        const result = await api.deleteTransaction(transactionId);
+    this.operationInProgress = true;
 
-        if (result.success) {
-          showNotification("Transaction deleted!", "success");
-          await this.loadData();
-        } else {
-          showNotification(`Error: ${result.error}`, "error");
+    // Show loading state on the specific row
+    this._showRowLoading(transactionId);
+
+    try {
+      const result = await api.deleteTransaction(transactionId);
+
+      if (result.success) {
+        showNotification("Transaction deleted!", "success");
+
+        // Optimistic UI update - remove the row immediately
+        this._optimisticUpdateDelete(transactionId);
+
+        // Reload data in background to ensure consistency
+        this.loadData();
+      } else {
+        showNotification(`Error: ${result.error}`, "error");
+        this._removeRowLoading(transactionId);
+      }
+    } catch (error) {
+      showNotification(`Error: ${error.message}`, "error");
+      this._removeRowLoading(transactionId);
+    } finally {
+      this.operationInProgress = false;
+    }
+  }
+
+  _optimisticUpdateReturn(transactionId) {
+    // Find and update the transaction in local data
+    const transaction = this.data.find((t) => t.id === transactionId);
+    if (transaction) {
+      transaction.status = "returned";
+      transaction.return_date = new Date().toISOString();
+    }
+
+    const filteredTransaction = this.filteredData.find(
+      (t) => t.id === transactionId,
+    );
+    if (filteredTransaction) {
+      filteredTransaction.status = "returned";
+      filteredTransaction.return_date = new Date().toISOString();
+    }
+
+    // Update only the affected row
+    const row = this.tableBody.querySelector(
+      `tr[data-transaction-id="${transactionId}"]`,
+    );
+    if (row && filteredTransaction) {
+      const newRow = this._createTransactionRow(filteredTransaction);
+      row.replaceWith(newRow);
+    }
+  }
+
+  _optimisticUpdateDelete(transactionId) {
+    // Remove from local data
+    this.data = this.data.filter((t) => t.id !== transactionId);
+    this.filteredData = this.filteredData.filter((t) => t.id !== transactionId);
+
+    // Remove row from DOM with animation
+    const row = this.tableBody.querySelector(
+      `tr[data-transaction-id="${transactionId}"]`,
+    );
+    if (row) {
+      row.style.opacity = "0";
+      row.style.transform = "translateX(-20px)";
+      row.style.transition = "all 0.3s ease";
+
+      setTimeout(() => {
+        row.remove();
+
+        // Check if table is empty
+        if (this.filteredData.length === 0) {
+          this.tableBody.innerHTML =
+            '<tr><td colspan="8" style="text-align: center;">No transactions found</td></tr>';
         }
-      } catch (error) {
-        showNotification(`Error: ${error.message}`, "error");
-      } finally {
-        this.operationInProgress = false;
+      }, 300);
+    }
+  }
+
+  _showRowLoading(transactionId) {
+    const row = this.tableBody.querySelector(
+      `tr[data-transaction-id="${transactionId}"]`,
+    );
+    if (row) {
+      row.style.opacity = "0.5";
+      row.style.pointerEvents = "none";
+
+      const actionsCell = row.querySelector("td:last-child");
+      if (actionsCell) {
+        actionsCell.innerHTML = `
+          <div class="table-actions">
+            <div class="spinner spinner-small"></div>
+          </div>
+        `;
       }
     }
+  }
+
+  _removeRowLoading(transactionId) {
+    const row = this.tableBody.querySelector(
+      `tr[data-transaction-id="${transactionId}"]`,
+    );
+    if (row) {
+      row.style.opacity = "1";
+      row.style.pointerEvents = "auto";
+    }
+  }
+
+  async _updateStatisticsInBackground() {
+    if (window.app) {
+      // Update statistics without waiting
+      window.app.loadStatistics().catch((err) => {
+        console.error("Background stats update failed:", err);
+      });
+
+      // Update books data in background
+      if (window.app.components.books) {
+        window.app.components.books.loadData().catch((err) => {
+          console.error("Background books update failed:", err);
+        });
+      }
+    }
+  }
+
+  _escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   async exportToExcel() {
@@ -264,6 +402,7 @@ class Transactions {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
     }
+    this.isRendering = false;
   }
 }
 

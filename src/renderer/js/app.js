@@ -7,6 +7,7 @@ const Students = require("./components/students");
 const Books = require("./components/books");
 const Transactions = require("./components/transactions");
 const Analytics = require("./components/analytics");
+
 class App {
   constructor() {
     this.currentTab = "dashboard";
@@ -17,6 +18,7 @@ class App {
       transactions: null,
       analytics: null,
     };
+    this.isLoading = false;
   }
 
   async init() {
@@ -73,9 +75,11 @@ class App {
     const startTime = performance.now();
 
     try {
-      // FIXED: Use Promise.allSettled to handle partial failures
+      // Load statistics first (fastest)
+      await this.loadStatistics();
+
+      // Load other data in parallel
       const results = await Promise.allSettled([
-        this.loadStatistics(),
         this.components.students.loadData(),
         this.components.books.loadData(),
         this.components.transactions.loadData(),
@@ -84,12 +88,7 @@ class App {
       // Check for failures
       results.forEach((result, index) => {
         if (result.status === "rejected") {
-          const componentNames = [
-            "statistics",
-            "students",
-            "books",
-            "transactions",
-          ];
+          const componentNames = ["students", "books", "transactions"];
           console.error(
             `Failed to load ${componentNames[index]}:`,
             result.reason,
@@ -97,7 +96,7 @@ class App {
         }
       });
 
-      // FIXED: Update dashboard only if we have data
+      // Update dashboard only if we have data
       if (this.components.students.data && this.components.books.data) {
         this.components.dashboard.update(
           this.components.students.data,
@@ -119,7 +118,6 @@ class App {
       this.updateStatisticsDisplay(stats);
     } catch (error) {
       console.error("Error loading statistics:", error);
-      // Show default values instead of failing completely
       this.updateStatisticsDisplay({
         totalStudents: 0,
         totalBooks: 0,
@@ -133,7 +131,11 @@ class App {
     const updateElement = (id, value) => {
       const element = document.getElementById(id);
       if (element) {
-        element.textContent = value;
+        // Animate number change
+        const currentValue = parseInt(element.textContent) || 0;
+        if (currentValue !== value) {
+          this.animateValue(element, currentValue, value, 300);
+        }
       }
     };
 
@@ -141,6 +143,26 @@ class App {
     updateElement("totalBooks", stats.totalBooks);
     updateElement("availableCopies", stats.availableCopies);
     updateElement("issuedBooks", stats.issuedBooks);
+  }
+
+  animateValue(element, start, end, duration) {
+    const range = end - start;
+    const increment = range / (duration / 16); // 60fps
+    let current = start;
+
+    const timer = setInterval(() => {
+      current += increment;
+
+      if (
+        (increment > 0 && current >= end) ||
+        (increment < 0 && current <= end)
+      ) {
+        current = end;
+        clearInterval(timer);
+      }
+
+      element.textContent = Math.round(current);
+    }, 16);
   }
 
   showTab(tabName) {
@@ -166,10 +188,20 @@ class App {
   }
 
   async refreshData() {
-    await this.loadInitialData();
+    if (this.isLoading) {
+      console.log("Already loading data, skipping refresh");
+      return;
+    }
+
+    this.isLoading = true;
+
+    try {
+      await this.loadInitialData();
+    } finally {
+      this.isLoading = false;
+    }
   }
 
-  // FIXED: Added cleanup method
   destroy() {
     // Cleanup all components
     if (this.components.students) {
@@ -196,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.app = app;
 });
 
-// FIXED: Cleanup on window unload
+// Cleanup on window unload
 window.addEventListener("beforeunload", () => {
   if (window.app) {
     window.app.destroy();

@@ -50,7 +50,9 @@ ipcMain.handle("issue-book", async (event, transaction) => {
     // Decrement available copies
     Book.decrementAvailableCopies(isbn);
 
-    cacheService.invalidate(["transactions", "books", "statistics"]);
+    // Only invalidate necessary caches
+    cacheService.invalidate(["transactions", "statistics"]);
+
     return { success: true };
   } catch (error) {
     console.error("Error issuing book:", error);
@@ -58,19 +60,44 @@ ipcMain.handle("issue-book", async (event, transaction) => {
   }
 });
 
-// Return book
+// Return book - OPTIMIZED
 ipcMain.handle("return-book", async (event, transactionId) => {
   try {
+    // Get transaction details before updating
+    const transaction = Transaction.findById(transactionId);
+
+    if (!transaction) {
+      return { success: false, error: "Transaction not found" };
+    }
+
+    if (transaction.status === "returned") {
+      return { success: false, error: "Book already returned" };
+    }
+
+    // Store ISBN for book update
+    const isbn = transaction.isbn;
+
+    // Perform the return operation
     Transaction.returnBook(transactionId);
-    cacheService.invalidate(["transactions", "books", "statistics"]);
-    return { success: true };
+
+    // Only invalidate necessary caches
+    // Don't invalidate books cache - just update statistics
+    cacheService.invalidate(["transactions", "statistics"]);
+
+    // Return updated data immediately for optimistic UI update
+    return {
+      success: true,
+      transactionId,
+      isbn,
+      updateType: "return",
+    };
   } catch (error) {
     console.error("Error returning book:", error);
     return { success: false, error: error.message };
   }
 });
 
-// Get all transactions
+// Get all transactions - OPTIMIZED
 ipcMain.handle("get-transactions", async () => {
   try {
     // Check cache first
@@ -82,8 +109,8 @@ ipcMain.handle("get-transactions", async () => {
     // Fetch from database
     const transactions = Transaction.findAll();
 
-    // Cache the result
-    cacheService.set("transactions", transactions);
+    // Cache the result with longer duration for this specific data
+    cacheService.set("transactions", transactions, 1000); // 1 second cache
 
     return transactions;
   } catch (error) {
@@ -92,22 +119,29 @@ ipcMain.handle("get-transactions", async () => {
   }
 });
 
-// Delete transaction
+// Delete transaction - OPTIMIZED
 ipcMain.handle("delete-transaction", async (event, transactionId) => {
   try {
     Transaction.delete(transactionId);
+
+    // Only invalidate transactions cache
     cacheService.invalidate(["transactions"]);
-    return { success: true };
+
+    return {
+      success: true,
+      transactionId,
+      updateType: "delete",
+    };
   } catch (error) {
     console.error("Error deleting transaction:", error);
     return { success: false, error: error.message };
   }
 });
 
-// Get statistics
+// Get statistics - OPTIMIZED with extended cache
 ipcMain.handle("get-statistics", async () => {
   try {
-    // Check cache first
+    // Check cache first with extended duration
     const cached = cacheService.get("statistics");
     if (cached) {
       return cached;
@@ -122,8 +156,8 @@ ipcMain.handle("get-statistics", async () => {
       issuedBooks: Transaction.getIssuedCount(),
     };
 
-    // Cache the result
-    cacheService.set("statistics", stats);
+    // Cache with longer duration - statistics change less frequently
+    cacheService.set("statistics", stats, 2000); // 2 seconds cache
 
     return stats;
   } catch (error) {
@@ -138,4 +172,4 @@ ipcMain.handle("get-statistics", async () => {
   }
 });
 
-console.log("Transaction handlers registered");
+console.log("Transaction handlers registered (optimized)");
