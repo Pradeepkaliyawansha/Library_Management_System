@@ -150,8 +150,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "yourusername",
-      "repo": "library-management"
+      "owner": "Pradeepkaliyawansha",
+      "repo": "Library_Management_System"
     }
   },
   "engines": {
