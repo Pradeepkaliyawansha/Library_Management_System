@@ -97,7 +97,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Library Management System",
-      "license": "LICENSE",
       "runAfterFinish": true
     },
     "mac": {
