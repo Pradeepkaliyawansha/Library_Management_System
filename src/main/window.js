@@ -14,7 +14,7 @@ function createMainWindow() {
       contextIsolation: false,
       enableRemoteModule: true,
     },
-    // icon: path.join(__dirname, "../../build/icon.ico"),
+    icon: path.join(__dirname, "../../build/icon.ico"),
     show: false, // Don't show until ready
   });
 

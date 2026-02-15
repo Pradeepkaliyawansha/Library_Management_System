@@ -1,58 +1,13 @@
 {
-  "name": "library-management-system",
-  "version": "1.0.0",
-  "description": "University Library Management System - A comprehensive library management solution",
-  "main": "src/main/index.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "NODE_ENV=development electron .",
     "build": "electron-builder",
     "build-win": "electron-builder --win --x64",
-    "build-mac": "electron-builder --mac",
-    "build-linux": "electron-builder --linux",
-    "build-all": "electron-builder -mwl",
-    "publish": "electron-builder --win --x64 --publish always",
-    "pack": "electron-builder --dir",
-    "postinstall": "electron-builder install-app-deps",
-    "clean": "rimraf dist node_modules package-lock.json && npm install"
-  },
-  "keywords": [
-    "library",
-    "management",
-    "university",
-    "books",
-    "students",
-    "electron",
-    "desktop-app"
-  ],
-  "author": {
-    "name": "Pradeep Kaliyawansha",
-    "email": "pradeep@example.com"
-  },
-  "license": "MIT",
-  "homepage": "https://github.com/Pradeepkaliyawansha/Library_Management_System",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Pradeepkaliyawansha/Library_Management_System.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Pradeepkaliyawansha/Library_Management_System/issues"
-  },
-  "dependencies": {
-    "electron-log": "^5.4.3",
-    "electron-updater": "^6.7.3",
-    "exceljs": "^4.4.0",
-    "sql.js": "^1.8.0"
-  },
-  "devDependencies": {
-    "electron": "^40.0.0",
-    "electron-builder": "^26.4.0",
-    "electron-rebuild": "^3.2.9"
+    "build-win-unsigned": "electron-builder --win --x64 --config.win.sign=null",
+    "publish": "electron-builder --win --x64 --publish always"
   },
   "build": {
     "appId": "com.university.library",
     "productName": "Library Management System",
-    "copyright": "Copyright © 2024 ${author}",
     "directories": {
       "buildResources": "build",
       "output": "dist"
@@ -89,6 +44,7 @@
           ]
         }
       ],
+      "icon": "build/icon.ico",
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
@@ -97,61 +53,14 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Library Management System",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "license": "LICENSE",
       "runAfterFinish": true
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.icns",
-      "category": "public.app-category.productivity",
-      "darkModeSupport": true,
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ],
-      "window": {
-        "width": 540,
-        "height": 380
-      }
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb",
-        "rpm"
-      ],
-      "icon": "build/icons",
-      "category": "Office",
-      "synopsis": "University Library Management System",
-      "description": "A comprehensive library management solution for universities and educational institutions."
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.exe"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "Pradeepkaliyawansha",
-      "repo": "Library_Management_System"
     }
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
   }
 }
