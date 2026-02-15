@@ -84,12 +84,8 @@ function setupAutoUpdater(window) {
       });
   });
 
-  // Check for updates on startup (after a delay)
-  setTimeout(() => {
-    if (process.env.NODE_ENV !== "development") {
-      autoUpdater.checkForUpdates();
-    }
-  }, 5000);
+  // Don't check for updates automatically on startup
+  // Updates will only be checked when user clicks "Check for Updates" in menu
 }
 
 function checkForUpdates() {
