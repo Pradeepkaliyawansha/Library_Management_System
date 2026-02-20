@@ -1,6 +1,6 @@
 const api = require("../services/api");
 const { showNotification } = require("../services/notifications");
-
+const { showConfirm } = require("../utils/confirm");
 class Transactions {
   constructor() {
     this.data = [];
@@ -159,8 +159,12 @@ class Transactions {
       showNotification("Already processing this row…", "warning");
       return;
     }
-    if (!confirm("Mark this book as returned?")) return;
-
+    const ok = await showConfirm("Mark this book as returned?", {
+      icon: "📚",
+      confirm: "Return Book",
+      variant: "primary",
+    });
+    if (!ok) return;
     this.pendingRows.add(transactionId);
     this._showRowLoading(transactionId);
 
@@ -194,8 +198,8 @@ class Transactions {
       showNotification("Already processing this row…", "warning");
       return;
     }
-    if (!confirm("Delete this transaction record?")) return;
-
+    const ok = await showConfirm("Delete this transaction record?");
+    if (!ok) return;
     this.pendingRows.add(transactionId);
     this._showRowLoading(transactionId);
 

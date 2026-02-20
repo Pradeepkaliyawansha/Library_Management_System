@@ -1,6 +1,6 @@
 const api = require("../services/api");
 const { showNotification } = require("../services/notifications");
-
+const { showConfirm } = require("../utils/confirm");
 class Students {
   constructor() {
     this.data = [];
@@ -211,8 +211,10 @@ class Students {
       showNotification("Please wait…", "warning");
       return;
     }
-    if (!confirm("Are you sure you want to delete this student?")) return;
-
+    const ok = await showConfirm(
+      "Are you sure you want to delete this student?",
+    );
+    if (!ok) return;
     this.operationInProgress = true;
     try {
       const result = await api.deleteStudent(studentId);
