@@ -209,14 +209,7 @@ const THEMES = {
 };
 
 // ==================== STUDENT YEARS ====================
-const STUDENT_YEARS = [
-  "1st Year",
-  "2nd Year",
-  "3rd Year",
-  "4th Year",
-  "Masters",
-  "PhD",
-];
+const STUDENT_YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
 // ==================== BOOK CATEGORIES ====================
 const BOOK_CATEGORIES = [

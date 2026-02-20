@@ -6,7 +6,7 @@ class Books {
     this.data = [];
     this.filteredData = [];
     this.editingBook = null;
-    this.operationInProgress = false;
+    this.operationInProgress = false; // Only true during user-initiated saves/deletes
     this.searchTimeout = null;
 
     this.initElements();
@@ -19,13 +19,10 @@ class Books {
     this.formContainer = document.getElementById("addBookForm");
     this.formTitle = document.getElementById("bookFormTitle");
     this.form = this.formContainer.querySelector("form");
-
-    // Modal elements
     this.issueModal = document.getElementById("issueBookModal");
     this.issueForm = document.getElementById("issueBookForm");
     this.issueModalTitle = document.getElementById("issueBookTitle");
 
-    // Form inputs
     this.inputs = {
       isbn: document.getElementById("bookIsbn"),
       title: document.getElementById("bookTitle"),
@@ -35,7 +32,6 @@ class Books {
       totalCopies: document.getElementById("bookTotalCopies"),
     };
 
-    // Issue form inputs
     this.issueInputs = {
       isbn: document.getElementById("issueBookIsbn"),
       studentId: document.getElementById("issueStudentId"),
@@ -43,10 +39,8 @@ class Books {
   }
 
   setupEventListeners() {
-    // Search with debouncing
     this.searchInput.addEventListener("input", () => this.handleSearch());
 
-    // Make functions globally available
     window.showAddBookForm = () => this.showAddForm();
     window.hideAddBookForm = () => this.hideForm();
     window.addBook = (e) => this.handleSubmit(e);
@@ -59,6 +53,8 @@ class Books {
     window.filterBooks = () => this.handleSearch();
   }
 
+  // loadData never touches operationInProgress — it is called both by the user
+  // and by background refreshes from the transactions component.
   async loadData() {
     try {
       this.data = await api.getBooks();
@@ -73,51 +69,30 @@ class Books {
   render() {
     if (this.filteredData.length === 0) {
       this.tableBody.innerHTML =
-        '<tr><td colspan="8" style="text-align: center;">No books found</td></tr>';
+        '<tr><td colspan="8" style="text-align:center">No books found</td></tr>';
       return;
     }
 
-    // Clear the table body first
     this.tableBody.innerHTML = "";
 
-    // Create rows directly using DOM methods to ensure proper column structure
     this.filteredData.forEach((book) => {
       const row = document.createElement("tr");
 
-      // ISBN/Book No cell
-      const isbnCell = document.createElement("td");
-      isbnCell.textContent = book.isbn;
-      row.appendChild(isbnCell);
+      const cells = [
+        book.isbn,
+        book.title,
+        book.author,
+        book.publisher || "N/A",
+        book.category || "N/A",
+        book.total_copies,
+        book.available_copies,
+      ];
 
-      // Title cell
-      const titleCell = document.createElement("td");
-      titleCell.textContent = book.title;
-      row.appendChild(titleCell);
-
-      // Author cell
-      const authorCell = document.createElement("td");
-      authorCell.textContent = book.author;
-      row.appendChild(authorCell);
-
-      // Publisher cell
-      const publisherCell = document.createElement("td");
-      publisherCell.textContent = book.publisher || "N/A";
-      row.appendChild(publisherCell);
-
-      // Category cell
-      const categoryCell = document.createElement("td");
-      categoryCell.textContent = book.category || "N/A";
-      row.appendChild(categoryCell);
-
-      // Total Copies cell
-      const totalCell = document.createElement("td");
-      totalCell.textContent = book.total_copies;
-      row.appendChild(totalCell);
-
-      // Available Copies cell
-      const availableCell = document.createElement("td");
-      availableCell.textContent = book.available_copies;
-      row.appendChild(availableCell);
+      cells.forEach((val, i) => {
+        const td = document.createElement("td");
+        td.textContent = val;
+        row.appendChild(td);
+      });
 
       // Actions cell
       const actionsCell = document.createElement("td");
@@ -140,9 +115,7 @@ class Books {
       deleteBtn.textContent = "Delete";
       deleteBtn.onclick = () => this.delete(book.isbn);
 
-      actionsDiv.appendChild(issueBtn);
-      actionsDiv.appendChild(editBtn);
-      actionsDiv.appendChild(deleteBtn);
+      actionsDiv.append(issueBtn, editBtn, deleteBtn);
       actionsCell.appendChild(actionsDiv);
       row.appendChild(actionsCell);
 
@@ -151,18 +124,15 @@ class Books {
   }
 
   handleSearch() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
-
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
     this.searchTimeout = setTimeout(() => {
-      const searchTerm = this.searchInput.value.toLowerCase();
+      const term = this.searchInput.value.toLowerCase();
       this.filteredData = this.data.filter(
         (b) =>
-          b.isbn.toLowerCase().includes(searchTerm) ||
-          b.title.toLowerCase().includes(searchTerm) ||
-          b.author.toLowerCase().includes(searchTerm) ||
-          (b.category && b.category.toLowerCase().includes(searchTerm)),
+          b.isbn.toLowerCase().includes(term) ||
+          b.title.toLowerCase().includes(term) ||
+          b.author.toLowerCase().includes(term) ||
+          (b.category && b.category.toLowerCase().includes(term)),
       );
       this.render();
     }, 150);
@@ -208,14 +178,15 @@ class Books {
   async handleSubmit(event) {
     event.preventDefault();
 
+    // Guard only the save action — not data loading
     if (this.operationInProgress) {
-      showNotification("Please wait...", "warning");
+      showNotification("Please wait…", "warning");
       return;
     }
-
     this.operationInProgress = true;
 
     const totalCopies = parseInt(this.inputs.totalCopies.value);
+    const isEdit = !!this.editingBook;
 
     const book = {
       isbn: this.inputs.isbn.value.trim(),
@@ -224,80 +195,58 @@ class Books {
       publisher: this.inputs.publisher.value.trim(),
       category: this.inputs.category.value.trim(),
       total_copies: totalCopies,
-      available_copies: this.editingBook
+      available_copies: isEdit
         ? this.editingBook.available_copies +
           (totalCopies - this.editingBook.total_copies)
         : totalCopies,
     };
 
-    const isEdit = !!this.editingBook;
-    this.hideForm();
+    this.hideForm(); // Hide immediately so user isn't blocked
 
     try {
-      let result;
-      if (isEdit) {
-        result = await api.updateBook(book);
-      } else {
-        result = await api.addBook(book);
-      }
+      const result = isEdit
+        ? await api.updateBook(book)
+        : await api.addBook(book);
 
       if (result.success) {
         showNotification(isEdit ? "Book updated!" : "Book added!", "success");
         await this.loadData();
-
-        if (window.app) {
-          await window.app.loadStatistics();
-          window.app.components.dashboard.update(
-            window.app.components.students.data,
-            this.data,
-          );
-        }
+        this._syncDashboard();
+        window.app?.loadStatistics();
       } else {
         showNotification(`Error: ${result.error}`, "error");
-        if (isEdit) {
-          this.edit(book.isbn);
-        } else {
-          this.showAddForm();
-        }
+        isEdit ? this.edit(book.isbn) : this.showAddForm();
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, "error");
     } finally {
+      // Always release — no matter what happened above
       this.operationInProgress = false;
     }
   }
 
   async delete(isbn) {
     if (this.operationInProgress) {
-      showNotification("Please wait...", "warning");
+      showNotification("Please wait…", "warning");
       return;
     }
+    if (!confirm("Are you sure you want to delete this book?")) return;
 
-    if (confirm("Are you sure you want to delete this book?")) {
-      this.operationInProgress = true;
-
-      try {
-        const result = await api.deleteBook(isbn);
-
-        if (result.success) {
-          showNotification("Book deleted!", "success");
-          await this.loadData();
-
-          if (window.app) {
-            await window.app.loadStatistics();
-            window.app.components.dashboard.update(
-              window.app.components.students.data,
-              this.data,
-            );
-          }
-        } else {
-          showNotification(`Error: ${result.error}`, "error");
-        }
-      } catch (error) {
-        showNotification(`Error: ${error.message}`, "error");
-      } finally {
-        this.operationInProgress = false;
+    this.operationInProgress = true;
+    try {
+      const result = await api.deleteBook(isbn);
+      if (result.success) {
+        showNotification("Book deleted!", "success");
+        await this.loadData();
+        this._syncDashboard();
+        window.app?.loadStatistics();
+      } else {
+        showNotification(`Error: ${result.error}`, "error");
       }
+    } catch (error) {
+      showNotification(`Error: ${error.message}`, "error");
+    } finally {
+      this.operationInProgress = false;
     }
   }
 
@@ -324,10 +273,9 @@ class Books {
     event.preventDefault();
 
     if (this.operationInProgress) {
-      showNotification("Please wait...", "warning");
+      showNotification("Please wait…", "warning");
       return;
     }
-
     this.operationInProgress = true;
 
     const transaction = {
@@ -339,20 +287,12 @@ class Books {
 
     try {
       const result = await api.issueBook(transaction);
-
       if (result.success) {
         showNotification("Book issued successfully!", "success");
-
         await this.loadData();
-
-        if (window.app) {
-          await window.app.components.transactions.loadData();
-          await window.app.loadStatistics();
-          window.app.components.dashboard.update(
-            window.app.components.students.data,
-            this.data,
-          );
-        }
+        window.app?.components.transactions.loadData();
+        window.app?.loadStatistics();
+        this._syncDashboard();
       } else {
         showNotification(`Error: ${result.error}`, "error");
       }
@@ -363,15 +303,22 @@ class Books {
     }
   }
 
+  _syncDashboard() {
+    if (window.app?.components.dashboard) {
+      window.app.components.dashboard.update(
+        window.app.components.students.data,
+        this.data,
+      );
+    }
+  }
+
   async exportToExcel() {
     if (this.data.length === 0) {
       showNotification("No books to export!", "warning");
       return;
     }
-
     try {
       const result = await api.exportToExcel("Books", this.data);
-
       if (result.success) {
         showNotification("Books exported successfully!", "success");
       } else if (result.error !== "Export cancelled") {
@@ -383,10 +330,7 @@ class Books {
   }
 
   destroy() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-      this.searchTimeout = null;
-    }
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
   }
 }
 

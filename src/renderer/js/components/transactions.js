@@ -5,9 +5,12 @@ class Transactions {
   constructor() {
     this.data = [];
     this.filteredData = [];
-    this.operationInProgress = false;
     this.searchTimeout = null;
     this.isRendering = false;
+
+    // Per-row locks instead of a single global flag.
+    // This means: acting on row #5 never blocks row #7 or any other tab's form.
+    this.pendingRows = new Set();
 
     this.initElements();
     this.setupEventListeners();
@@ -19,10 +22,8 @@ class Transactions {
   }
 
   setupEventListeners() {
-    // Search with debouncing
     this.searchInput.addEventListener("input", () => this.handleSearch());
 
-    // Make functions globally available
     window.returnBook = (id) => this.returnBook(id);
     window.deleteTransaction = (id) => this.deleteTransaction(id);
     window.filterTransactions = () => this.handleSearch();
@@ -41,14 +42,8 @@ class Transactions {
   }
 
   render() {
-    // Prevent multiple simultaneous renders
-    if (this.isRendering) {
-      return;
-    }
-
+    if (this.isRendering) return;
     this.isRendering = true;
-
-    // Use requestAnimationFrame for smooth rendering
     requestAnimationFrame(() => {
       this._performRender();
       this.isRendering = false;
@@ -58,19 +53,15 @@ class Transactions {
   _performRender() {
     if (this.filteredData.length === 0) {
       this.tableBody.innerHTML =
-        '<tr><td colspan="8" style="text-align: center;">No transactions found</td></tr>';
+        '<tr><td colspan="8" style="text-align:center">No transactions found</td></tr>';
       return;
     }
 
-    // Use DocumentFragment for better performance
     const fragment = document.createDocumentFragment();
+    this.filteredData.forEach((t) =>
+      fragment.appendChild(this._createTransactionRow(t)),
+    );
 
-    this.filteredData.forEach((t) => {
-      const row = this._createTransactionRow(t);
-      fragment.appendChild(row);
-    });
-
-    // Single DOM update
     this.tableBody.innerHTML = "";
     this.tableBody.appendChild(fragment);
   }
@@ -83,23 +74,17 @@ class Transactions {
     const returnDate = t.return_date
       ? new Date(t.return_date).toLocaleDateString()
       : "-";
-
     const isOverdue =
       t.status === "issued" && new Date(t.due_date) < new Date();
 
     const row = document.createElement("tr");
-    if (isOverdue) {
-      row.className = "overdue-row";
-    }
-
-    // Store transaction ID as data attribute for faster access
+    if (isOverdue) row.className = "overdue-row";
     row.dataset.transactionId = t.id;
 
-    // Build row HTML in one go for better performance
     row.innerHTML = `
       <td>${this._escapeHtml(t.student_id)}</td>
       <td>${this._escapeHtml(t.student_name || "N/A")}</td>
-      <td style="font-family: monospace">${this._escapeHtml(t.isbn || "N/A")}</td>
+      <td style="font-family:monospace">${this._escapeHtml(t.isbn || "N/A")}</td>
       <td>${this._escapeHtml(t.book_title || "N/A")}</td>
       <td>${issueDate}</td>
       <td>${dueDate}</td>
@@ -112,9 +97,7 @@ class Transactions {
       </td>
     `;
 
-    // Add event listeners after row creation
     this._attachEventListeners(row, t);
-
     return row;
   }
 
@@ -122,73 +105,63 @@ class Transactions {
     return `<span class="status-badge status-${status}">${status.toUpperCase()}</span>`;
   }
 
-  _getActionButtonsHtml(transaction) {
-    if (transaction.status === "issued") {
-      return `<button class="btn-small btn-warning return-btn" data-id="${transaction.id}">Return</button>`;
-    } else if (transaction.status === "returned") {
-      return `<button class="btn-small btn-danger delete-btn" data-id="${transaction.id}">Delete</button>`;
+  _getActionButtonsHtml(t) {
+    if (t.status === "issued") {
+      return `<button class="btn-small btn-warning return-btn" data-id="${t.id}">Return</button>`;
+    }
+    if (t.status === "returned") {
+      return `<button class="btn-small btn-danger delete-btn" data-id="${t.id}">Delete</button>`;
     }
     return "";
   }
 
-  _attachEventListeners(row, transaction) {
-    // Use event delegation for better performance
+  _attachEventListeners(row, t) {
     const returnBtn = row.querySelector(".return-btn");
     const deleteBtn = row.querySelector(".delete-btn");
 
     if (returnBtn) {
       returnBtn.onclick = (e) => {
         e.stopPropagation();
-        this.returnBook(transaction.id);
+        this.returnBook(t.id);
       };
     }
-
     if (deleteBtn) {
       deleteBtn.onclick = (e) => {
         e.stopPropagation();
-        this.deleteTransaction(transaction.id);
+        this.deleteTransaction(t.id);
       };
     }
   }
 
   handleSearch() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
 
     this.searchTimeout = setTimeout(() => {
-      const searchTerm = this.searchInput.value.toLowerCase();
-
-      if (!searchTerm) {
-        this.filteredData = [...this.data];
-      } else {
-        this.filteredData = this.data.filter(
-          (t) =>
-            t.student_id.toLowerCase().includes(searchTerm) ||
-            (t.student_name &&
-              t.student_name.toLowerCase().includes(searchTerm)) ||
-            (t.book_title && t.book_title.toLowerCase().includes(searchTerm)) ||
-            (t.isbn && t.isbn.toLowerCase().includes(searchTerm)),
-        );
-      }
-
+      const term = this.searchInput.value.toLowerCase();
+      this.filteredData = term
+        ? this.data.filter(
+            (t) =>
+              t.student_id.toLowerCase().includes(term) ||
+              (t.student_name && t.student_name.toLowerCase().includes(term)) ||
+              (t.book_title && t.book_title.toLowerCase().includes(term)) ||
+              (t.isbn && t.isbn.toLowerCase().includes(term)),
+          )
+        : [...this.data];
       this.render();
     }, 150);
   }
 
+  // ─── Return ────────────────────────────────────────────────────────────────
+
   async returnBook(transactionId) {
-    if (this.operationInProgress) {
-      showNotification("Please wait...", "warning");
+    // Per-row guard — does NOT block any other component or form
+    if (this.pendingRows.has(transactionId)) {
+      showNotification("Already processing this row…", "warning");
       return;
     }
+    if (!confirm("Mark this book as returned?")) return;
 
-    if (!confirm("Mark this book as returned?")) {
-      return;
-    }
-
-    this.operationInProgress = true;
-
-    // Show loading state on the specific row
+    this.pendingRows.add(transactionId);
     this._showRowLoading(transactionId);
 
     try {
@@ -196,15 +169,11 @@ class Transactions {
 
       if (result.success) {
         showNotification("Book returned successfully!", "success");
-
-        // Optimistic UI update - update only the affected row
         this._optimisticUpdateReturn(transactionId);
 
-        // Update statistics in background
-        this._updateStatisticsInBackground();
-
-        // Reload full data in background
-        this.loadData();
+        // Fire-and-forget background refreshes — wrapped in their own
+        // try/catch so a failure here NEVER affects this component's state
+        this._backgroundRefresh();
       } else {
         showNotification(`Error: ${result.error}`, "error");
         this._removeRowLoading(transactionId);
@@ -213,23 +182,21 @@ class Transactions {
       showNotification(`Error: ${error.message}`, "error");
       this._removeRowLoading(transactionId);
     } finally {
-      this.operationInProgress = false;
+      // Always release the row lock
+      this.pendingRows.delete(transactionId);
     }
   }
 
+  // ─── Delete ────────────────────────────────────────────────────────────────
+
   async deleteTransaction(transactionId) {
-    if (this.operationInProgress) {
-      showNotification("Please wait...", "warning");
+    if (this.pendingRows.has(transactionId)) {
+      showNotification("Already processing this row…", "warning");
       return;
     }
+    if (!confirm("Delete this transaction record?")) return;
 
-    if (!confirm("Are you sure you want to delete this transaction record?")) {
-      return;
-    }
-
-    this.operationInProgress = true;
-
-    // Show loading state on the specific row
+    this.pendingRows.add(transactionId);
     this._showRowLoading(transactionId);
 
     try {
@@ -237,12 +204,8 @@ class Transactions {
 
       if (result.success) {
         showNotification("Transaction deleted!", "success");
-
-        // Optimistic UI update - remove the row immediately
         this._optimisticUpdateDelete(transactionId);
-
-        // Reload data in background to ensure consistency
-        this.loadData();
+        this._backgroundRefresh();
       } else {
         showNotification(`Error: ${result.error}`, "error");
         this._removeRowLoading(transactionId);
@@ -251,106 +214,123 @@ class Transactions {
       showNotification(`Error: ${error.message}`, "error");
       this._removeRowLoading(transactionId);
     } finally {
-      this.operationInProgress = false;
+      this.pendingRows.delete(transactionId);
     }
   }
 
+  // ─── Optimistic UI ─────────────────────────────────────────────────────────
+
   _optimisticUpdateReturn(transactionId) {
-    // Find and update the transaction in local data
-    const transaction = this.data.find((t) => t.id === transactionId);
-    if (transaction) {
-      transaction.status = "returned";
-      transaction.return_date = new Date().toISOString();
-    }
+    // Update local data arrays first
+    [this.data, this.filteredData].forEach((arr) => {
+      const t = arr.find((x) => x.id === transactionId);
+      if (t) {
+        t.status = "returned";
+        t.return_date = new Date().toISOString();
+      }
+    });
 
-    const filteredTransaction = this.filteredData.find(
-      (t) => t.id === transactionId,
-    );
-    if (filteredTransaction) {
-      filteredTransaction.status = "returned";
-      filteredTransaction.return_date = new Date().toISOString();
-    }
-
-    // Update only the affected row
+    // Swap just the one DOM row — no full re-render
     const row = this.tableBody.querySelector(
       `tr[data-transaction-id="${transactionId}"]`,
     );
-    if (row && filteredTransaction) {
-      const newRow = this._createTransactionRow(filteredTransaction);
-      row.replaceWith(newRow);
-    }
+    const updated = this.filteredData.find((x) => x.id === transactionId);
+    if (row && updated) row.replaceWith(this._createTransactionRow(updated));
   }
 
   _optimisticUpdateDelete(transactionId) {
-    // Remove from local data
-    this.data = this.data.filter((t) => t.id !== transactionId);
-    this.filteredData = this.filteredData.filter((t) => t.id !== transactionId);
+    this.data = this.data.filter((x) => x.id !== transactionId);
+    this.filteredData = this.filteredData.filter((x) => x.id !== transactionId);
 
-    // Remove row from DOM with animation
     const row = this.tableBody.querySelector(
       `tr[data-transaction-id="${transactionId}"]`,
     );
     if (row) {
-      row.style.opacity = "0";
-      row.style.transform = "translateX(-20px)";
-      row.style.transition = "all 0.3s ease";
-
+      row.style.cssText =
+        "opacity:0;transform:translateX(-20px);transition:all .25s ease";
       setTimeout(() => {
         row.remove();
-
-        // Check if table is empty
         if (this.filteredData.length === 0) {
           this.tableBody.innerHTML =
-            '<tr><td colspan="8" style="text-align: center;">No transactions found</td></tr>';
+            '<tr><td colspan="8" style="text-align:center">No transactions found</td></tr>';
         }
-      }, 300);
+      }, 260);
     }
   }
+
+  // ─── Background refresh ────────────────────────────────────────────────────
+  // IMPORTANT: this method NEVER sets operationInProgress on other components.
+  // It calls the raw api directly and updates caches, then lets each
+  // component re-render itself at its own pace.
+
+  _backgroundRefresh() {
+    // Statistics header
+    if (window.app) {
+      window.app
+        .loadStatistics()
+        .catch((e) => console.error("Background stats refresh failed:", e));
+    }
+
+    // Reload our own full data quietly in background (for consistency)
+    // Use a short delay so the optimistic update renders first
+    setTimeout(() => {
+      this.loadData().catch((e) =>
+        console.error("Background transaction reload failed:", e),
+      );
+    }, 800);
+
+    // Books available-copies counter — reload silently WITHOUT touching
+    // books.operationInProgress so the Books form stays fully interactive
+    if (window.app && window.app.components.books) {
+      setTimeout(() => {
+        api
+          .getBooks()
+          .then((books) => {
+            window.app.components.books.data = books;
+            // Only re-render books table if the books tab is currently visible
+            const booksTabActive = document
+              .getElementById("books")
+              ?.classList.contains("active");
+            if (booksTabActive) {
+              window.app.components.books.filteredData = [...books];
+              window.app.components.books.render();
+            }
+          })
+          .catch((e) => console.error("Background books refresh failed:", e));
+      }, 400);
+    }
+  }
+
+  // ─── Row loading state ─────────────────────────────────────────────────────
 
   _showRowLoading(transactionId) {
     const row = this.tableBody.querySelector(
       `tr[data-transaction-id="${transactionId}"]`,
     );
-    if (row) {
-      row.style.opacity = "0.5";
-      row.style.pointerEvents = "none";
-
-      const actionsCell = row.querySelector("td:last-child");
-      if (actionsCell) {
-        actionsCell.innerHTML = `
-          <div class="table-actions">
-            <div class="spinner spinner-small"></div>
-          </div>
-        `;
-      }
+    if (!row) return;
+    row.style.opacity = "0.45";
+    row.style.pointerEvents = "none";
+    const actionsCell = row.querySelector("td:last-child");
+    if (actionsCell) {
+      actionsCell.innerHTML = `
+        <div class="table-actions">
+          <div class="spinner spinner-small"></div>
+        </div>`;
     }
   }
 
   _removeRowLoading(transactionId) {
+    // Re-render just that one row from local data to restore its buttons
+    const t = this.filteredData.find((x) => x.id === transactionId);
     const row = this.tableBody.querySelector(
       `tr[data-transaction-id="${transactionId}"]`,
     );
-    if (row) {
-      row.style.opacity = "1";
-      row.style.pointerEvents = "auto";
+    if (row && t) {
+      row.replaceWith(this._createTransactionRow(t));
     }
   }
 
-  async _updateStatisticsInBackground() {
-    if (window.app) {
-      // Update statistics without waiting
-      window.app.loadStatistics().catch((err) => {
-        console.error("Background stats update failed:", err);
-      });
-
-      // Update books data in background
-      if (window.app.components.books) {
-        window.app.components.books.loadData().catch((err) => {
-          console.error("Background books update failed:", err);
-        });
-      }
-    }
-  }
+  // ─── Helpers ───────────────────────────────────────────────────────────────
 
   _escapeHtml(text) {
     if (!text) return "";
@@ -364,10 +344,8 @@ class Transactions {
       showNotification("No transactions to export!", "warning");
       return;
     }
-
     try {
       const result = await api.exportToExcel("Transactions", this.data);
-
       if (result.success) {
         showNotification("Transactions exported successfully!", "success");
       } else if (result.error !== "Export cancelled") {
@@ -385,24 +363,18 @@ class Transactions {
   }
 
   getStatistics() {
-    const issued = this.data.filter((t) => t.status === "issued").length;
-    const returned = this.data.filter((t) => t.status === "returned").length;
-    const overdue = this.getOverdueTransactions().length;
-
     return {
       total: this.data.length,
-      issued,
-      returned,
-      overdue,
+      issued: this.data.filter((t) => t.status === "issued").length,
+      returned: this.data.filter((t) => t.status === "returned").length,
+      overdue: this.getOverdueTransactions().length,
     };
   }
 
   destroy() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-      this.searchTimeout = null;
-    }
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
     this.isRendering = false;
+    this.pendingRows.clear();
   }
 }
 

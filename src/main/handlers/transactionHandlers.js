@@ -9,9 +9,7 @@ ipcMain.handle("issue-book", async (event, transaction) => {
   try {
     const { student_id, isbn } = transaction;
 
-    // Check for duplicate
-    const hasDuplicate = Transaction.checkDuplicate(student_id, isbn);
-    if (hasDuplicate) {
+    if (Transaction.checkDuplicate(student_id, isbn)) {
       return {
         success: false,
         error:
@@ -19,40 +17,21 @@ ipcMain.handle("issue-book", async (event, transaction) => {
       };
     }
 
-    // Check if book exists and has available copies
     const book = Book.findByIsbn(isbn);
-    if (!book) {
-      return { success: false, error: "Book not found" };
-    }
-
-    if (book.available_copies <= 0) {
+    if (!book) return { success: false, error: "Book not found" };
+    if (book.available_copies <= 0)
       return { success: false, error: "No copies available" };
-    }
 
-    // Check if student exists
     const student = Student.findById(student_id);
-    if (!student) {
-      return { success: false, error: "Student not found" };
-    }
+    if (!student) return { success: false, error: "Student not found" };
 
-    // Calculate due date (14 days from now)
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 14);
-    const dueDateStr = dueDate.toISOString();
 
-    // Create transaction
-    Transaction.create({
-      student_id,
-      isbn,
-      due_date: dueDateStr,
-    });
-
-    // Decrement available copies
+    Transaction.create({ student_id, isbn, due_date: dueDate.toISOString() });
     Book.decrementAvailableCopies(isbn);
 
-    // Only invalidate necessary caches
-    cacheService.invalidate(["transactions", "statistics"]);
-
+    cacheService.invalidate(["transactions", "statistics", "books"]);
     return { success: true };
   } catch (error) {
     console.error("Error issuing book:", error);
@@ -60,35 +39,21 @@ ipcMain.handle("issue-book", async (event, transaction) => {
   }
 });
 
-// Return book - OPTIMIZED
+// Return book
 ipcMain.handle("return-book", async (event, transactionId) => {
   try {
-    // Get transaction details before updating
     const transaction = Transaction.findById(transactionId);
-
-    if (!transaction) {
-      return { success: false, error: "Transaction not found" };
-    }
-
-    if (transaction.status === "returned") {
+    if (!transaction) return { success: false, error: "Transaction not found" };
+    if (transaction.status === "returned")
       return { success: false, error: "Book already returned" };
-    }
 
-    // Store ISBN for book update
-    const isbn = transaction.isbn;
-
-    // Perform the return operation
     Transaction.returnBook(transactionId);
 
-    // Only invalidate necessary caches
-    // Don't invalidate books cache - just update statistics
-    cacheService.invalidate(["transactions", "statistics"]);
-
-    // Return updated data immediately for optimistic UI update
+    cacheService.invalidate(["transactions", "statistics", "books"]);
     return {
       success: true,
       transactionId,
-      isbn,
+      isbn: transaction.isbn,
       updateType: "return",
     };
   } catch (error) {
@@ -97,57 +62,45 @@ ipcMain.handle("return-book", async (event, transactionId) => {
   }
 });
 
-// Get all transactions - OPTIMIZED
-ipcMain.handle("get-transactions", async () => {
-  try {
-    // Check cache first
-    const cached = cacheService.get("transactions");
-    if (cached) {
-      return cached;
+// Get transactions — paginated, aggressively cached
+ipcMain.handle(
+  "get-transactions",
+  async (event, { limit = 200, offset = 0 } = {}) => {
+    try {
+      const cacheKey = `transactions_${offset}`;
+      const cached = cacheService.get(cacheKey);
+      if (cached) return cached;
+
+      const transactions = Transaction.findAll(limit, offset);
+
+      // Cache for 5 seconds — transactions change far less than every second
+      cacheService.set(cacheKey, transactions, 5000);
+      return transactions;
+    } catch (error) {
+      console.error("Error getting transactions:", error);
+      return [];
     }
+  },
+);
 
-    // Fetch from database
-    const transactions = Transaction.findAll();
-
-    // Cache the result with longer duration for this specific data
-    cacheService.set("transactions", transactions, 1000); // 1 second cache
-
-    return transactions;
-  } catch (error) {
-    console.error("Error getting transactions:", error);
-    return [];
-  }
-});
-
-// Delete transaction - OPTIMIZED
+// Delete transaction
 ipcMain.handle("delete-transaction", async (event, transactionId) => {
   try {
     Transaction.delete(transactionId);
-
-    // Only invalidate transactions cache
-    cacheService.invalidate(["transactions"]);
-
-    return {
-      success: true,
-      transactionId,
-      updateType: "delete",
-    };
+    cacheService.invalidate(["transactions", "transactions_0"]);
+    return { success: true, transactionId, updateType: "delete" };
   } catch (error) {
     console.error("Error deleting transaction:", error);
     return { success: false, error: error.message };
   }
 });
 
-// Get statistics - OPTIMIZED with extended cache
+// Statistics — cached for 5 seconds
 ipcMain.handle("get-statistics", async () => {
   try {
-    // Check cache first with extended duration
     const cached = cacheService.get("statistics");
-    if (cached) {
-      return cached;
-    }
+    if (cached) return cached;
 
-    // Calculate statistics
     const stats = {
       totalStudents: Student.count(),
       totalBooks: Book.count(),
@@ -156,9 +109,7 @@ ipcMain.handle("get-statistics", async () => {
       issuedBooks: Transaction.getIssuedCount(),
     };
 
-    // Cache with longer duration - statistics change less frequently
-    cacheService.set("statistics", stats, 2000); // 2 seconds cache
-
+    cacheService.set("statistics", stats, 5000);
     return stats;
   } catch (error) {
     console.error("Error getting statistics:", error);
