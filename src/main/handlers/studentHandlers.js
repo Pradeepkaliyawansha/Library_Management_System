@@ -51,6 +51,18 @@ ipcMain.handle("update-student", async (event, student) => {
 // Delete student
 ipcMain.handle("delete-student", async (event, studentId) => {
   try {
+    // Block deletion if student has active (unreturned) loans
+    const Transaction = require("../database/models/Transaction");
+    const activeLoans = Transaction.findByStudentId(studentId);
+
+    if (activeLoans.length > 0) {
+      const titles = activeLoans.map((t) => `"${t.title}"`).join(", ");
+      return {
+        success: false,
+        error: `Cannot delete student. They have ${activeLoans.length} unreturned book(s): ${titles}. Please return all books first.`,
+      };
+    }
+
     Student.delete(studentId);
     cacheService.invalidate(["students", "statistics"]);
     return { success: true };

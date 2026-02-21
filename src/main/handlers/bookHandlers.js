@@ -51,6 +51,20 @@ ipcMain.handle("update-book", async (event, book) => {
 // Delete book
 ipcMain.handle("delete-book", async (event, isbn) => {
   try {
+    // Block deletion if book has active (unreturned) loans
+    const Transaction = require("../database/models/Transaction");
+    const activeLoans = Transaction.findActiveByIsbn(isbn);
+
+    if (activeLoans.length > 0) {
+      const borrowers = activeLoans
+        .map((t) => `"${t.student_name || t.student_id}"`)
+        .join(", ");
+      return {
+        success: false,
+        error: `Cannot delete book. It is currently issued to ${activeLoans.length} student(s): ${borrowers}. Please return all copies first.`,
+      };
+    }
+
     Book.delete(isbn);
     cacheService.invalidate(["books", "statistics"]);
     return { success: true };

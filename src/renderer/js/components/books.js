@@ -230,8 +230,26 @@ class Books {
       showNotification("Please wait…", "warning");
       return;
     }
-    const ok = await showConfirm("Are you sure you want to delete this book?");
+
+    // Pre-check: find the book and check available vs total copies
+    const book = this.data.find((b) => b.isbn === isbn);
+    if (book) {
+      const issuedCount = book.total_copies - book.available_copies;
+      if (issuedCount > 0) {
+        showNotification(
+          `❌ Cannot delete "${book.title}" — ${issuedCount} copy(s) are currently issued. Return all copies first.`,
+          "error",
+        );
+        return; // Stop here — no confirm dialog shown
+      }
+    }
+
+    const ok = await showConfirm(
+      "Are you sure you want to delete this book? This cannot be undone.",
+      { icon: "🗑️", confirm: "Delete", variant: "danger" },
+    );
     if (!ok) return;
+
     this.operationInProgress = true;
     try {
       const result = await api.deleteBook(isbn);
@@ -241,7 +259,8 @@ class Books {
         this._syncDashboard();
         window.app?.loadStatistics();
       } else {
-        showNotification(`Error: ${result.error}`, "error");
+        // Backend blocked it (safety net — catches race conditions)
+        showNotification(`❌ ${result.error}`, "error");
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, "error");

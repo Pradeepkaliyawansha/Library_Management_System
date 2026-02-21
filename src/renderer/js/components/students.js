@@ -211,10 +211,31 @@ class Students {
       showNotification("Please wait…", "warning");
       return;
     }
+
+    // Pre-check: show active loans in the confirm dialog before asking
+    let confirmMessage = "Are you sure you want to delete this student?";
+    try {
+      const activeLoans = await api.getStudentBooks(studentId);
+      if (activeLoans.length > 0) {
+        const student = this.data.find((s) => s.student_id === studentId);
+        const name = student ? student.name : studentId;
+        showNotification(
+          `❌ Cannot delete "${name}" — they have ${activeLoans.length} unreturned book(s). Return all books first.`,
+          "error",
+        );
+        return; // Stop here — no confirm dialog, no API call
+      }
+    } catch (error) {
+      // If the pre-check fails, fall through and let the backend decide
+      console.warn("Pre-check for active loans failed:", error);
+    }
+
     const ok = await showConfirm(
-      "Are you sure you want to delete this student?",
+      "Are you sure you want to delete this student? This cannot be undone.",
+      { icon: "🗑️", confirm: "Delete", variant: "danger" },
     );
     if (!ok) return;
+
     this.operationInProgress = true;
     try {
       const result = await api.deleteStudent(studentId);
@@ -224,7 +245,8 @@ class Students {
         this._syncDashboard();
         window.app?.loadStatistics();
       } else {
-        showNotification(`Error: ${result.error}`, "error");
+        // Backend blocked it (safety net — catches race conditions)
+        showNotification(`❌ ${result.error}`, "error");
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, "error");
@@ -232,7 +254,6 @@ class Students {
       this.operationInProgress = false;
     }
   }
-
   async viewBooks(studentId) {
     try {
       const books = await api.getStudentBooks(studentId);
