@@ -1,6 +1,4 @@
 async function runMigrations(db) {
-  console.log("Running database migrations...");
-
   db.run(`
     CREATE TABLE IF NOT EXISTS students (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,9 +56,7 @@ async function runMigrations(db) {
   indexes.forEach((sql) => {
     try {
       db.run(sql);
-    } catch (e) {
-      console.log("Index (may exist):", e.message);
-    }
+    } catch (e) {}
   });
 
   // Column migration: add due_date if missing (legacy DBs)
@@ -70,14 +66,11 @@ async function runMigrations(db) {
       const cols = info[0].values.map((r) => r[1]);
       if (!cols.includes("due_date")) {
         db.run("ALTER TABLE transactions ADD COLUMN due_date TEXT");
-        console.log("Migrated: added due_date column");
       }
     }
   } catch (e) {
     console.log("Column migration:", e.message);
   }
-
-  console.log("Database migrations completed");
 }
 
 module.exports = { runMigrations };

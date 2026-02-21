@@ -29,10 +29,8 @@ async function initDatabase() {
       // avoids the overhead of async event loop for a single read
       const buffer = fs.readFileSync(DB_PATH);
       db = new SQL.Database(buffer);
-      console.log("[DB] Loaded from:", DB_PATH);
     } else {
       db = new SQL.Database();
-      console.log("[DB] Created new database");
     }
 
     console.timeEnd("[DB] Load file");
@@ -51,7 +49,6 @@ async function initDatabase() {
       await saveDatabase();
     }
 
-    console.log("[DB] Initialized successfully");
     return db;
   } catch (error) {
     console.error("[DB] Initialization error:", error);
@@ -98,7 +95,6 @@ async function closeDatabase() {
     if (db) {
       db.close();
     }
-    console.log("[DB] Closed");
   } catch (error) {
     console.error("[DB] Close error:", error);
   }

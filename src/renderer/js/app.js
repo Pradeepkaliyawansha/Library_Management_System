@@ -22,8 +22,6 @@ class App {
   }
 
   async init() {
-    console.log("Initializing application...");
-
     // Initialize theme
     initTheme();
 
@@ -105,7 +103,6 @@ class App {
       }
 
       const endTime = performance.now();
-      console.log(`Data loaded in ${(endTime - startTime).toFixed(2)}ms`);
     } catch (error) {
       console.error("Error loading initial data:", error);
       showNotification("Error loading data", "error");
@@ -189,7 +186,6 @@ class App {
 
   async refreshData() {
     if (this.isLoading) {
-      console.log("Already loading data, skipping refresh");
       return;
     }
 

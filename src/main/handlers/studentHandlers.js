@@ -82,5 +82,3 @@ ipcMain.handle("get-student-books", async (event, studentId) => {
     return [];
   }
 });
-
-console.log("Student handlers registered");

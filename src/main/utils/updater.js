@@ -19,7 +19,6 @@ function setupAutoUpdater(window) {
   // Event listeners
   autoUpdater.on("checking-for-update", () => {
     log.info("Checking for updates...");
-    console.log("Checking for updates...");
   });
 
   autoUpdater.on("update-available", (info) => {
@@ -62,7 +61,6 @@ function setupAutoUpdater(window) {
   autoUpdater.on("download-progress", (progressObj) => {
     const logMessage = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
     log.info(logMessage);
-    console.log(logMessage);
     mainWindow.webContents.send("update-progress", progressObj);
   });
 

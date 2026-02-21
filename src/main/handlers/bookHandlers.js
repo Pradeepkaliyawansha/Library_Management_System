@@ -73,5 +73,3 @@ ipcMain.handle("delete-book", async (event, isbn) => {
     return { success: false, error: error.message };
   }
 });
-
-console.log("Book handlers registered");

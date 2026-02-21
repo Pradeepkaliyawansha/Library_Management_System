@@ -122,5 +122,3 @@ ipcMain.handle("get-statistics", async () => {
     };
   }
 });
-
-console.log("Transaction handlers registered (optimized)");

@@ -31,5 +31,3 @@ ipcMain.handle("export-to-excel", async (event, { type, data }) => {
     return { success: false, error: error.message };
   }
 });
-
-console.log("Export handlers registered");

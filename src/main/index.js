@@ -15,29 +15,10 @@ let mainWindow;
 
 async function initialize() {
   try {
-    console.log("=== Starting Library Management System ===");
-
-    // Initialize database first
-    console.log("Initializing database...");
     await initDatabase();
-    console.log("✓ Database initialized");
-
-    // Create main window
-    console.log("Creating main window...");
     mainWindow = createMainWindow();
-    console.log("✓ Main window created");
-
-    // Setup application menu
-    console.log("Setting up menu...");
     createMenu(mainWindow);
-    console.log("✓ Menu configured");
-
-    // Setup auto-updater
-    console.log("Setting up auto-updater...");
     setupAutoUpdater(mainWindow);
-    console.log("✓ Auto-updater configured");
-
-    console.log("=== Application initialized successfully ===");
   } catch (error) {
     console.error("=== FATAL: Failed to initialize application ===");
     console.error(error);
@@ -69,12 +50,10 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", async (event) => {
-  console.log("Application shutting down...");
   event.preventDefault();
 
   try {
     await closeDatabase();
-    console.log("✓ Database closed");
   } catch (error) {
     console.error("Error closing database:", error);
   }
