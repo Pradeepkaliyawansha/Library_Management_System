@@ -213,7 +213,6 @@ class Students {
     }
 
     // Pre-check: show active loans in the confirm dialog before asking
-    let confirmMessage = "Are you sure you want to delete this student?";
     try {
       const activeLoans = await api.getStudentBooks(studentId);
       if (activeLoans.length > 0) {
@@ -254,28 +253,184 @@ class Students {
       this.operationInProgress = false;
     }
   }
+
   async viewBooks(studentId) {
     try {
       const books = await api.getStudentBooks(studentId);
       const student = this.data.find((s) => s.student_id === studentId);
-
-      let message = `Books borrowed by ${student.name} (${studentId}):\n\n`;
-
-      if (books.length === 0) {
-        message += "No books currently borrowed.";
-      } else {
-        books.forEach((book, i) => {
-          message += `${i + 1}. ${book.title} by ${book.author}\n`;
-          message += `   ISBN: ${book.isbn}\n`;
-          message += `   Issued:  ${new Date(book.issue_date).toLocaleDateString()}\n`;
-          message += `   Due:     ${new Date(book.due_date).toLocaleDateString()}\n\n`;
-        });
-      }
-
-      alert(message);
+      this._showStudentBooksModal(student, books);
     } catch (error) {
       showNotification("Error loading student books", "error");
     }
+  }
+
+  _showStudentBooksModal(student, books) {
+    // Remove existing modal if any
+    const existing = document.getElementById("studentBooksModal");
+    if (existing) existing.remove();
+
+    const isOverdue = (dueDate) => dueDate && new Date(dueDate) < new Date();
+
+    const booksHtml =
+      books.length === 0
+        ? `<div style="text-align:center; padding: var(--space-10); color: var(--color-text-muted);">
+             <div style="font-size: 3rem; margin-bottom: var(--space-4);">📭</div>
+             <p style="font-size: var(--font-size-base);">No books currently borrowed.</p>
+           </div>`
+        : books
+            .map((book, i) => {
+              const overdue = isOverdue(book.due_date);
+              return `
+              <div style="
+                background: var(--color-bg-tertiary);
+                border: 1px solid var(--color-border);
+                border-left: 4px solid ${overdue ? "var(--color-danger)" : "var(--color-primary)"};
+                border-radius: var(--radius-md);
+                padding: var(--space-4) var(--space-5);
+                margin-bottom: var(--space-3);
+              ">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: var(--space-3);">
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-weight: var(--font-weight-bold); color: var(--color-text); font-size: var(--font-size-base); margin-bottom: var(--space-1);">
+                      ${i + 1}. ${this._escapeHtml(book.title)}
+                    </div>
+                    <div style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
+                      by ${this._escapeHtml(book.author || "Unknown")}
+                    </div>
+                    <div style="color: var(--color-text-muted); font-size: var(--font-size-xs); margin-top: var(--space-1); font-family: monospace;">
+                      Book No: ${this._escapeHtml(book.isbn)}
+                    </div>
+                  </div>
+                  <span class="status-badge ${overdue ? "status-overdue" : "status-issued"}" style="flex-shrink:0;">
+                    ${overdue ? "OVERDUE" : "ISSUED"}
+                  </span>
+                </div>
+                <div style="display:flex; gap: var(--space-6); margin-top: var(--space-3); font-size: var(--font-size-xs); color: var(--color-text-secondary);">
+                  <span>📅 Issued: ${new Date(book.issue_date).toLocaleDateString()}</span>
+                  <span style="color: ${overdue ? "var(--color-danger)" : "inherit"};">
+                    ⏰ Due: ${new Date(book.due_date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>`;
+            })
+            .join("");
+
+    const overdueCount = books.filter((b) => isOverdue(b.due_date)).length;
+
+    const modal = document.createElement("div");
+    modal.id = "studentBooksModal";
+    modal.className = "modal";
+    modal.style.cssText = "display:flex;";
+    modal.innerHTML = `
+      <div class="modal-backdrop" id="studentBooksBackdrop"></div>
+      <div class="modal-content" style="max-width: 560px; width: 95%; padding: var(--space-8);">
+
+        <div class="modal-header">
+          <h3 class="modal-title" style="margin:0; display:flex; align-items:center; gap:var(--space-3); font-family:var(--font-display);">
+            📚 Borrowed Books
+          </h3>
+          <button class="modal-close" id="studentBooksCloseBtn" aria-label="Close">✕</button>
+        </div>
+
+        <!-- Student info card -->
+        <div style="
+          background: var(--color-bg-tertiary);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          padding: var(--space-4) var(--space-5);
+          margin: var(--space-5) 0;
+          display: flex;
+          align-items: center;
+          gap: var(--space-4);
+        ">
+          <div style="
+            width: 48px; height: 48px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; flex-shrink: 0;
+          ">👤</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight: var(--font-weight-bold); color: var(--color-text); font-size: var(--font-size-base);">
+              ${this._escapeHtml(student?.name || "Unknown")}
+            </div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 2px;">
+              ID: ${this._escapeHtml(student?.student_id || "")}${student?.department ? ` &bull; ${this._escapeHtml(student.department)}` : ""}${student?.year ? ` &bull; ${this._escapeHtml(student.year)}` : ""}
+            </div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-primary); line-height:1;">
+              ${books.length}
+            </div>
+            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted); text-transform:uppercase; letter-spacing:.05em;">
+              Book${books.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+        </div>
+
+        ${
+          overdueCount > 0
+            ? `
+        <div style="
+          background: rgba(239,68,68,0.1);
+          border: 1px solid rgba(239,68,68,0.3);
+          border-radius: var(--radius-md);
+          padding: var(--space-3) var(--space-4);
+          margin-bottom: var(--space-4);
+          color: var(--color-danger);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-semibold);
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+        ">
+          ⚠️ ${overdueCount} book${overdueCount !== 1 ? "s are" : " is"} overdue and need${overdueCount === 1 ? "s" : ""} to be returned.
+        </div>`
+            : ""
+        }
+
+        <!-- Books list -->
+        <div style="max-height: 380px; overflow-y: auto; padding-right: var(--space-1);">
+          ${booksHtml}
+        </div>
+
+        <div class="modal-footer" style="border-top: 1px solid var(--color-border); padding-top: var(--space-5); margin-top: var(--space-4); justify-content:flex-end;">
+          <button class="btn btn-secondary" id="studentBooksOkBtn">Close</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.classList.add("modal-open");
+
+    const close = () => {
+      modal.remove();
+      document.body.classList.remove("modal-open");
+    };
+
+    document
+      .getElementById("studentBooksCloseBtn")
+      .addEventListener("click", close);
+    document
+      .getElementById("studentBooksOkBtn")
+      .addEventListener("click", close);
+    document
+      .getElementById("studentBooksBackdrop")
+      .addEventListener("click", close);
+
+    document.addEventListener("keydown", function onKey(e) {
+      if (e.key === "Escape") {
+        document.removeEventListener("keydown", onKey);
+        close();
+      }
+    });
+  }
+
+  _escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   _syncDashboard() {
