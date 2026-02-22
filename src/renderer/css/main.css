@@ -13,6 +13,7 @@
 @import url("./components/tables.css");
 @import url("./components/modal.css");
 @import url("./components/analytics.css");
+@import url("./components/sessionBar.css");
 
 /* NOTE: Google Fonts is loaded via <link> in index.html — no @import needed here.
    Having @import after any non-@import rule causes it to be silently ignored by CSS.

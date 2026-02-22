@@ -159,8 +159,11 @@
           <div class="quick-actions">
             <h3 class="section-title">Quick Actions</h3>
             <div class="action-cards">
+              <!-- Only shown to roles that can add students -->
               <button
                 class="action-card"
+                data-perm="CAN_ADD_STUDENT"
+                data-perm-show
                 onclick="
                   showTab('students');
                   showAddStudentForm();
@@ -173,8 +176,11 @@
                 </div>
               </button>
 
+              <!-- Only shown to roles that can add books -->
               <button
                 class="action-card"
+                data-perm="CAN_ADD_BOOK"
+                data-perm-show
                 onclick="
                   showTab('books');
                   showAddBookForm();
@@ -187,6 +193,7 @@
                 </div>
               </button>
 
+              <!-- Always visible (all roles can view transactions) -->
               <button class="action-card" onclick="showTab('transactions')">
                 <div class="action-icon">👁️</div>
                 <div class="action-text">
@@ -234,17 +241,29 @@
             <p class="page-subtitle">Manage your student database</p>
           </div>
           <div class="button-group">
+            <!-- Export: all roles (CAN_EXPORT always true) -->
             <button class="btn btn-success" onclick="exportStudentsToExcel()">
               <span>📊</span> Export to Excel
             </button>
-            <button class="btn btn-primary" onclick="showAddStudentForm()">
+            <!-- Add Student: Admin + Librarian only -->
+            <button
+              class="btn btn-primary"
+              onclick="showAddStudentForm()"
+              data-perm="CAN_ADD_STUDENT"
+              data-perm-show
+            >
               <span>+</span> Add Student
             </button>
           </div>
         </div>
 
-        <!-- Add/Edit Student Form -->
-        <div id="addStudentForm" class="form-container" style="display: none">
+        <!-- Add/Edit Student Form — hidden from Viewers via JS (form container) -->
+        <div
+          id="addStudentForm"
+          class="form-container"
+          style="display: none"
+          data-perm="CAN_ADD_STUDENT"
+        >
           <h3 id="studentFormTitle">Add New Student</h3>
           <form onsubmit="addStudent(event)">
             <div class="form-grid">
@@ -304,7 +323,7 @@
           </form>
         </div>
 
-        <!-- Search Input - OUTSIDE table-container -->
+        <!-- Search Input -->
         <input
           type="text"
           id="studentSearch"
@@ -347,17 +366,29 @@
             <p class="page-subtitle">Manage your library collection</p>
           </div>
           <div class="button-group">
+            <!-- Export: all roles -->
             <button class="btn btn-success" onclick="exportBooksToExcel()">
               <span>📊</span> Export to Excel
             </button>
-            <button class="btn btn-primary" onclick="showAddBookForm()">
+            <!-- Add Book: Admin + Librarian only -->
+            <button
+              class="btn btn-primary"
+              onclick="showAddBookForm()"
+              data-perm="CAN_ADD_BOOK"
+              data-perm-show
+            >
               <span>+</span> Add Book
             </button>
           </div>
         </div>
 
         <!-- Add/Edit Book Form -->
-        <div id="addBookForm" class="form-container" style="display: none">
+        <div
+          id="addBookForm"
+          class="form-container"
+          style="display: none"
+          data-perm="CAN_ADD_BOOK"
+        >
           <h3 id="bookFormTitle">Add New Book</h3>
           <form onsubmit="addBook(event)">
             <div class="form-grid">
@@ -416,7 +447,7 @@
           </form>
         </div>
 
-        <!-- Search Input - OUTSIDE table-container -->
+        <!-- Search Input -->
         <input
           type="text"
           id="bookSearch"
@@ -457,15 +488,17 @@
             <h2 class="page-title">Book Transactions</h2>
             <p class="page-subtitle">Track book issues and returns</p>
           </div>
+          <!-- Analytics: all roles -->
           <button class="btn btn-info" onclick="showAnalytics()">
             <span>📊</span> View Analytics
           </button>
+          <!-- Export: all roles -->
           <button class="btn btn-success" onclick="exportTransactionsToExcel()">
             <span>📊</span> Export to Excel
           </button>
         </div>
 
-        <!-- Search Input - OUTSIDE table-container -->
+        <!-- Search Input -->
         <input
           type="text"
           id="transactionSearch"
@@ -537,6 +570,7 @@
         </form>
       </div>
     </div>
+
     <!-- ==================== ANALYTICS MODAL ==================== -->
     <div
       id="analyticsModal"
@@ -745,6 +779,12 @@
         </div>
       </div>
     </div>
+
+    <!-- ==================== ROLE-BASED VIEWER NOTICE ==================== -->
+    <!--
+      This banner is injected dynamically by auth.js when the role is VIEWER.
+      It provides clear feedback that the user is in read-only mode.
+    -->
 
     <script>
       require("./js/app.js");

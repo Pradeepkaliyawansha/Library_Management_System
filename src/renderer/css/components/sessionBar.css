@@ -1,0 +1,228 @@
+/* ── CSS Variables ───────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --sb-bg: rgba(10, 14, 26, 0.97);
+  --sb-border: rgba(99, 102, 241, 0.18);
+  --sb-text-muted: rgba(255, 255, 255, 0.35);
+  --sb-text-label: rgba(255, 255, 255, 0.38);
+  --sb-text-name: rgba(255, 255, 255, 0.88);
+  --sb-icon-opacity: 0.55;
+
+  /* Role badge colours */
+  --sb-admin-text: #f87171;
+  --sb-admin-bg: rgba(239, 68, 68, 0.14);
+  --sb-admin-border: rgba(239, 68, 68, 0.3);
+
+  --sb-lib-text: #818cf8;
+  --sb-lib-bg: rgba(99, 102, 241, 0.14);
+  --sb-lib-border: rgba(99, 102, 241, 0.3);
+
+  --sb-view-text: #34d399;
+  --sb-view-bg: rgba(16, 185, 129, 0.14);
+  --sb-view-border: rgba(16, 185, 129, 0.3);
+
+  /* Buttons */
+  --sb-users-text: #818cf8;
+  --sb-users-bg: rgba(99, 102, 241, 0.14);
+  --sb-users-bg-hover: rgba(99, 102, 241, 0.26);
+  --sb-users-border: rgba(99, 102, 241, 0.3);
+
+  --sb-logout-text: #f87171;
+  --sb-logout-bg: rgba(239, 68, 68, 0.12);
+  --sb-logout-bg-hover: rgba(239, 68, 68, 0.24);
+  --sb-logout-border: rgba(239, 68, 68, 0.26);
+
+  /* Theme toggle */
+  --sb-toggle-bg: rgba(255, 255, 255, 0.06);
+  --sb-toggle-bg-hover: rgba(255, 255, 255, 0.12);
+  --sb-toggle-border: rgba(255, 255, 255, 0.1);
+  --sb-toggle-text: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="light"] {
+  --sb-bg: rgba(255, 255, 255, 0.96);
+  --sb-border: rgba(99, 102, 241, 0.2);
+  --sb-text-muted: rgba(30, 30, 60, 0.38);
+  --sb-text-label: rgba(30, 30, 60, 0.42);
+  --sb-text-name: rgba(15, 15, 40, 0.9);
+  --sb-icon-opacity: 0.45;
+
+  --sb-admin-text: #dc2626;
+  --sb-admin-bg: rgba(239, 68, 68, 0.1);
+  --sb-admin-border: rgba(239, 68, 68, 0.25);
+
+  --sb-lib-text: #4f46e5;
+  --sb-lib-bg: rgba(99, 102, 241, 0.1);
+  --sb-lib-border: rgba(99, 102, 241, 0.25);
+
+  --sb-view-text: #059669;
+  --sb-view-bg: rgba(16, 185, 129, 0.1);
+  --sb-view-border: rgba(16, 185, 129, 0.25);
+
+  --sb-users-text: #4f46e5;
+  --sb-users-bg: rgba(99, 102, 241, 0.1);
+  --sb-users-bg-hover: rgba(99, 102, 241, 0.2);
+  --sb-users-border: rgba(99, 102, 241, 0.25);
+
+  --sb-logout-text: #dc2626;
+  --sb-logout-bg: rgba(239, 68, 68, 0.08);
+  --sb-logout-bg-hover: rgba(239, 68, 68, 0.18);
+  --sb-logout-border: rgba(239, 68, 68, 0.22);
+
+  --sb-toggle-bg: rgba(0, 0, 0, 0.05);
+  --sb-toggle-bg-hover: rgba(0, 0, 0, 0.1);
+  --sb-toggle-border: rgba(0, 0, 0, 0.1);
+  --sb-toggle-text: rgba(30, 30, 60, 0.55);
+}
+
+/* ── Host bar ────────────────────────────────────────────── */
+#sessionBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: var(--sb-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--sb-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 9999;
+  font-family: var(--font-body, "DM Sans", sans-serif);
+  font-size: 0.75rem;
+  user-select: none;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+
+/* ── Left side (branding) ────────────────────────────────── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--sb-text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  transition: color 0.25s ease;
+}
+
+.sb-brand svg {
+  opacity: var(--sb-icon-opacity);
+  flex-shrink: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* ── Right side (user info + actions) ────────────────────── */
+.sb-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-label {
+  color: var(--sb-text-label);
+  font-size: 0.7rem;
+  transition: color 0.25s ease;
+}
+
+.sb-username {
+  color: var(--sb-text-name);
+  font-weight: 600;
+  transition: color 0.25s ease;
+}
+
+/* ── Role badge ──────────────────────────────────────────── */
+.sb-role-badge {
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.sb-role-badge.ADMIN {
+  color: var(--sb-admin-text);
+  background: var(--sb-admin-bg);
+  border: 1px solid var(--sb-admin-border);
+}
+
+.sb-role-badge.LIBRARIAN {
+  color: var(--sb-lib-text);
+  background: var(--sb-lib-bg);
+  border: 1px solid var(--sb-lib-border);
+}
+
+.sb-role-badge.VIEWER {
+  color: var(--sb-view-text);
+  background: var(--sb-view-bg);
+  border: 1px solid var(--sb-view-border);
+}
+
+/* ── Shared button base ──────────────────────────────────── */
+.sb-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.03em;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  white-space: nowrap;
+}
+
+/* Users button */
+.sb-btn-users {
+  color: var(--sb-users-text);
+  background: var(--sb-users-bg);
+  border-color: var(--sb-users-border);
+}
+.sb-btn-users:hover {
+  background: var(--sb-users-bg-hover);
+}
+
+/* Logout button */
+.sb-btn-logout {
+  color: var(--sb-logout-text);
+  background: var(--sb-logout-bg);
+  border-color: var(--sb-logout-border);
+}
+.sb-btn-logout:hover {
+  background: var(--sb-logout-bg-hover);
+}
+
+/* Theme toggle button */
+.sb-btn-theme {
+  color: var(--sb-toggle-text);
+  background: var(--sb-toggle-bg);
+  border-color: var(--sb-toggle-border);
+  padding: 3px 8px;
+  font-size: 0.78rem;
+}
+.sb-btn-theme:hover {
+  background: var(--sb-toggle-bg-hover);
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+.sb-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--sb-border);
+  transition: background 0.25s ease;
+}

@@ -15,24 +15,21 @@ function createMainWindow() {
       enableRemoteModule: true,
     },
     icon: path.join(__dirname, "../../build/icon.ico"),
-    show: false, // Don't show until ready
+    show: false,
   });
 
-  // Load the index.html
-  mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
+  // ← Load login screen first instead of index.html
+  mainWindow.loadFile(path.join(__dirname, "../renderer/login.html"));
 
-  // Show window when ready
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
     mainWindow.focus();
   });
 
-  // Handle window close
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 
-  // Development mode
   if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools();
   }
@@ -40,7 +37,6 @@ function createMainWindow() {
   return mainWindow;
 }
 
-// FIXED: Added getter function
 function getMainWindow() {
   return mainWindow;
 }

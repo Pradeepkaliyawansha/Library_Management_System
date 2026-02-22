@@ -10,6 +10,7 @@ require("./handlers/studentHandlers");
 require("./handlers/bookHandlers");
 require("./handlers/transactionHandlers");
 require("./handlers/exportHandlers");
+require("./handlers/authHandlers"); // ← NEW
 
 let mainWindow;
 
@@ -22,54 +23,40 @@ async function initialize() {
   } catch (error) {
     console.error("=== FATAL: Failed to initialize application ===");
     console.error(error);
-
-    // Show error dialog
     const { dialog } = require("electron");
     dialog.showErrorBox(
       "Initialization Error",
       `Failed to start the application:\n\n${error.message}\n\nPlease restart the application.`,
     );
-
     app.quit();
   }
 }
 
-// App lifecycle events
 app.whenReady().then(initialize);
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    initialize();
-  }
+  if (BrowserWindow.getAllWindows().length === 0) initialize();
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });
 
 app.on("before-quit", async (event) => {
   event.preventDefault();
-
   try {
     await closeDatabase();
   } catch (error) {
     console.error("Error closing database:", error);
   }
-
-  // Allow quit
   app.exit(0);
 });
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
 });
-
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-// Export for testing
 module.exports = { mainWindow };

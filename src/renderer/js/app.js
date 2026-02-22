@@ -1,12 +1,15 @@
 const { ipcRenderer } = require("electron");
 const api = require("./services/api");
+const authService = require("./services/auth");
+const sessionBar = require("./components/sessionBar");
 const { showNotification } = require("./services/notifications");
-const { initTheme } = require("./utils/theme");
+const { initTheme, toggleTheme } = require("./utils/theme");
 const Dashboard = require("./components/dashboard");
 const Students = require("./components/students");
 const Books = require("./components/books");
 const Transactions = require("./components/transactions");
 const Analytics = require("./components/analytics");
+const UserManager = require("./components/userManager");
 
 class App {
   constructor() {
@@ -22,47 +25,58 @@ class App {
   }
 
   async init() {
-    // Initialize theme
+    // ── Auth guard ─────────────────────────────────────────────────
+    if (!authService.init()) return; // redirects to login.html if no session
+
+    // ── Theme ──────────────────────────────────────────────────────
     initTheme();
 
-    // Initialize components
+    // Expose toggleTheme globally so sessionBar theme button can call it
+    window.toggleTheme = toggleTheme;
+
+    // ── Session bar (standalone component + separate CSS) ──────────
+    sessionBar.mount();
+
+    // ── Initialize components ──────────────────────────────────────
     this.components.dashboard = new Dashboard();
     this.components.students = new Students();
     this.components.books = new Books();
     this.components.transactions = new Transactions();
     this.components.analytics = new Analytics();
 
-    // Setup event listeners
+    // User manager (admin only)
+    this.userManager = new UserManager(authService);
+    window.userManager = this.userManager;
+
+    // ── Apply role-based UI ────────────────────────────────────────
+    setTimeout(() => authService.applyRoleUI(), 100);
+
+    // ── Event listeners ────────────────────────────────────────────
     this.setupEventListeners();
 
-    // Load initial data
+    // ── Load data ──────────────────────────────────────────────────
     await this.loadInitialData();
 
-    console.log("Application initialized");
+    console.log(
+      `App initialized — logged in as ${authService.displayName} (${authService.role})`,
+    );
   }
 
   setupEventListeners() {
-    // Tab switching
     window.showTab = (tabName) => this.showTab(tabName);
 
-    // Export listeners
     ipcRenderer.on("export-students", () => {
       this.components.students.exportToExcel();
     });
-
     ipcRenderer.on("export-books", () => {
       this.components.books.exportToExcel();
     });
-
     ipcRenderer.on("export-transactions", () => {
       this.components.transactions.exportToExcel();
     });
-
-    // Update progress listeners
     ipcRenderer.on("update-downloading", () => {
       showNotification("Downloading update...", "info");
     });
-
     ipcRenderer.on("update-progress", (event, progressObj) => {
       const percent = Math.round(progressObj.percent);
       showNotification(`Downloading update: ${percent}%`, "info");
@@ -70,31 +84,22 @@ class App {
   }
 
   async loadInitialData() {
-    const startTime = performance.now();
-
     try {
-      // Load statistics first (fastest)
       await this.loadStatistics();
 
-      // Load other data in parallel
       const results = await Promise.allSettled([
         this.components.students.loadData(),
         this.components.books.loadData(),
         this.components.transactions.loadData(),
       ]);
 
-      // Check for failures
       results.forEach((result, index) => {
         if (result.status === "rejected") {
-          const componentNames = ["students", "books", "transactions"];
-          console.error(
-            `Failed to load ${componentNames[index]}:`,
-            result.reason,
-          );
+          const names = ["students", "books", "transactions"];
+          console.error(`Failed to load ${names[index]}:`, result.reason);
         }
       });
 
-      // Update dashboard only if we have data
       if (this.components.students.data && this.components.books.data) {
         this.components.dashboard.update(
           this.components.students.data,
@@ -102,7 +107,7 @@ class App {
         );
       }
 
-      const endTime = performance.now();
+      setTimeout(() => authService.applyRoleUI(), 300);
     } catch (error) {
       console.error("Error loading initial data:", error);
       showNotification("Error loading data", "error");
@@ -126,16 +131,12 @@ class App {
 
   updateStatisticsDisplay(stats) {
     const updateElement = (id, value) => {
-      const element = document.getElementById(id);
-      if (element) {
-        // Animate number change
-        const currentValue = parseInt(element.textContent) || 0;
-        if (currentValue !== value) {
-          this.animateValue(element, currentValue, value, 300);
-        }
+      const el = document.getElementById(id);
+      if (el) {
+        const current = parseInt(el.textContent) || 0;
+        if (current !== value) this.animateValue(el, current, value, 300);
       }
     };
-
     updateElement("totalStudents", stats.totalStudents);
     updateElement("totalBooks", stats.totalBooks);
     updateElement("availableCopies", stats.availableCopies);
@@ -144,12 +145,10 @@ class App {
 
   animateValue(element, start, end, duration) {
     const range = end - start;
-    const increment = range / (duration / 16); // 60fps
+    const increment = range / (duration / 16);
     let current = start;
-
     const timer = setInterval(() => {
       current += increment;
-
       if (
         (increment > 0 && current >= end) ||
         (increment < 0 && current <= end)
@@ -157,40 +156,28 @@ class App {
         current = end;
         clearInterval(timer);
       }
-
       element.textContent = Math.round(current);
     }, 16);
   }
 
   showTab(tabName) {
-    // Hide all tabs
-    const tabs = document.querySelectorAll(".tab-content");
-    const buttons = document.querySelectorAll(".tab-button");
+    document
+      .querySelectorAll(".tab-content")
+      .forEach((t) => t.classList.remove("active"));
+    document
+      .querySelectorAll(".tab-button")
+      .forEach((b) => b.classList.remove("active"));
 
-    tabs.forEach((tab) => tab.classList.remove("active"));
-    buttons.forEach((btn) => btn.classList.remove("active"));
-
-    // Show selected tab
-    const selectedTab = document.getElementById(tabName);
-    if (selectedTab) {
-      selectedTab.classList.add("active");
-    }
-
-    const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
-    if (activeButton) {
-      activeButton.classList.add("active");
-    }
+    document.getElementById(tabName)?.classList.add("active");
+    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add("active");
 
     this.currentTab = tabName;
+    setTimeout(() => authService.applyRoleUI(), 100);
   }
 
   async refreshData() {
-    if (this.isLoading) {
-      return;
-    }
-
+    if (this.isLoading) return;
     this.isLoading = true;
-
     try {
       await this.loadInitialData();
     } finally {
@@ -199,36 +186,22 @@ class App {
   }
 
   destroy() {
-    // Cleanup all components
-    if (this.components.students) {
-      this.components.students.destroy();
-    }
-    if (this.components.books) {
-      this.components.books.destroy();
-    }
-    if (this.components.transactions) {
-      this.components.transactions.destroy();
-    }
-    if (this.components.analytics) {
-      this.components.analytics.destroy();
-    }
+    sessionBar.unmount();
+    if (this.components.students) this.components.students.destroy();
+    if (this.components.books) this.components.books.destroy();
+    if (this.components.transactions) this.components.transactions.destroy();
+    if (this.components.analytics) this.components.analytics.destroy();
   }
 }
 
-// Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   const app = new App();
   app.init();
-
-  // Make app instance globally available
   window.app = app;
 });
 
-// Cleanup on window unload
 window.addEventListener("beforeunload", () => {
-  if (window.app) {
-    window.app.destroy();
-  }
+  if (window.app) window.app.destroy();
 });
 
 module.exports = App;

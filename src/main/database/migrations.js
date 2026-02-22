@@ -40,6 +40,20 @@ async function runMigrations(db) {
     );
   `);
 
+  // ==================== AUTH TABLE ====================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      username      TEXT    UNIQUE NOT NULL,
+      password_hash TEXT    NOT NULL,
+      salt          TEXT    NOT NULL,
+      role          TEXT    NOT NULL DEFAULT 'VIEWER',
+      display_name  TEXT    NOT NULL,
+      is_active     INTEGER DEFAULT 1,
+      created_at    TEXT    DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Core lookup indexes
   const indexes = [
     "CREATE INDEX IF NOT EXISTS idx_student_id    ON students(student_id)",
@@ -47,10 +61,9 @@ async function runMigrations(db) {
     "CREATE INDEX IF NOT EXISTS idx_trans_student ON transactions(student_id)",
     "CREATE INDEX IF NOT EXISTS idx_trans_isbn    ON transactions(isbn)",
     "CREATE INDEX IF NOT EXISTS idx_trans_status  ON transactions(status)",
-    // Critical for ORDER BY issue_date DESC (the default sort)
     "CREATE INDEX IF NOT EXISTS idx_trans_date    ON transactions(issue_date DESC)",
-    // Composite index speeds up the duplicate-check query
     "CREATE INDEX IF NOT EXISTS idx_trans_dup     ON transactions(student_id, isbn, status)",
+    "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)",
   ];
 
   indexes.forEach((sql) => {

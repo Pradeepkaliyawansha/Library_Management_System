@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+    />
+    <title>Library Management — Login</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --color-bg: #050810;
+        --color-surface: #0f1422;
+        --color-surface-2: #161d2e;
+        --color-border: rgba(99, 102, 241, 0.15);
+        --color-border-bright: rgba(99, 102, 241, 0.4);
+        --color-primary: #6366f1;
+        --color-primary-light: #818cf8;
+        --color-text: #f1f5f9;
+        --color-text-secondary: #94a3b8;
+        --color-text-muted: #475569;
+        --color-danger: #ef4444;
+        --glow: 0 0 40px rgba(99, 102, 241, 0.25);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--color-bg);
+        color: var(--color-text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .bg-grid {
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+        animation: gridDrift 30s linear infinite;
+        z-index: 0;
+      }
+      @keyframes gridDrift {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(60px);
+        }
+      }
+
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.35;
+        pointer-events: none;
+        z-index: 0;
+        animation: orbFloat 8s ease-in-out infinite alternate;
+      }
+      .orb-1 {
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+        top: -200px;
+        left: -150px;
+        animation-duration: 9s;
+      }
+      .orb-2 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+        bottom: -150px;
+        right: -100px;
+        animation-duration: 11s;
+        animation-delay: -3s;
+      }
+      .orb-3 {
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+        top: 40%;
+        left: 60%;
+        opacity: 0.2;
+        animation-duration: 13s;
+        animation-delay: -6s;
+      }
+      @keyframes orbFloat {
+        from {
+          transform: translate(0, 0) scale(1);
+        }
+        to {
+          transform: translate(30px, -40px) scale(1.05);
+        }
+      }
+
+      .login-wrapper {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 420px;
+        padding: 24px;
+        animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      @keyframes cardReveal {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .login-card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 24px;
+        padding: 48px 40px 40px;
+        box-shadow:
+          0 0 0 1px rgba(99, 102, 241, 0.08) inset,
+          0 40px 80px rgba(0, 0, 0, 0.6),
+          var(--glow);
+        position: relative;
+        overflow: hidden;
+      }
+      .login-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--color-primary),
+          var(--color-primary-light),
+          transparent
+        );
+        animation: shimmerLine 3s ease-in-out infinite;
+      }
+      @keyframes shimmerLine {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .logo-section {
+        text-align: center;
+        margin-bottom: 36px;
+      }
+      .logo-icon-wrap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        border-radius: 20px;
+        margin-bottom: 20px;
+        box-shadow:
+          0 0 30px rgba(99, 102, 241, 0.5),
+          0 8px 20px rgba(0, 0, 0, 0.3);
+        animation: logoPulse 3s ease-in-out infinite;
+      }
+      @keyframes logoPulse {
+        0%,
+        100% {
+          box-shadow:
+            0 0 30px rgba(99, 102, 241, 0.5),
+            0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        50% {
+          box-shadow:
+            0 0 50px rgba(99, 102, 241, 0.7),
+            0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+      }
+      .logo-icon-wrap svg {
+        width: 36px;
+        height: 36px;
+        color: white;
+      }
+      .logo-title {
+        font-family: "Playfair Display", serif;
+        font-size: 1.75rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #f1f5f9 0%, #818cf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .logo-subtitle {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-weight: 500;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+      }
+      .input-wrap {
+        position: relative;
+      }
+      .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1rem;
+        opacity: 0.5;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .input-wrap:focus-within .input-icon {
+        opacity: 1;
+      }
+      .form-input {
+        width: 100%;
+        background: var(--color-surface-2);
+        border: 1.5px solid var(--color-border);
+        border-radius: 12px;
+        padding: 14px 14px 14px 42px;
+        font-size: 0.95rem;
+        font-family: "DM Sans", sans-serif;
+        color: var(--color-text);
+        outline: none;
+        transition: all 0.2s ease;
+      }
+      .form-input::placeholder {
+        color: var(--color-text-muted);
+      }
+      .form-input:focus {
+        border-color: var(--color-primary);
+        background: #1a2035;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+      }
+
+      .btn-login {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: "DM Sans", sans-serif;
+        cursor: pointer;
+        letter-spacing: 0.04em;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+      }
+      .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+      }
+      .btn-login:active {
+        transform: translateY(0);
+      }
+      .btn-login:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-login .btn-text {
+        position: relative;
+        z-index: 1;
+      }
+      .btn-login .btn-shimmer {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.15),
+          transparent
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s;
+      }
+      .btn-login:hover .btn-shimmer {
+        transform: translateX(100%);
+      }
+      .btn-login.loading .btn-text::after {
+        content: "";
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: white;
+        border-radius: 50%;
+        margin-left: 10px;
+        vertical-align: middle;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .message {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.83rem;
+        font-weight: 500;
+        margin-bottom: 16px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+      .message.show {
+        display: flex;
+      }
+      .message.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #f87171;
+      }
+
+      .hint-box {
+        margin-top: 24px;
+        padding: 14px 16px;
+        background: rgba(99, 102, 241, 0.06);
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 10px;
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+        line-height: 1.7;
+      }
+      .hint-box strong {
+        color: var(--color-primary-light);
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+      }
+      .hint-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2px 0;
+      }
+      .hint-role {
+        font-weight: 600;
+        color: var(--color-text-secondary);
+      }
+      .hint-creds {
+        font-family: monospace;
+        font-size: 0.82rem;
+        color: var(--color-text-muted);
+      }
+      .role-badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .role-badge.ADMIN {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+      }
+      .role-badge.LIBRARIAN {
+        background: rgba(99, 102, 241, 0.15);
+        color: #818cf8;
+      }
+      .role-badge.VIEWER {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+      }
+
+      .version-tag {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.72rem;
+        color: var(--color-text-muted);
+        letter-spacing: 0.05em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="login-wrapper">
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="logo-section">
+          <div class="logo-icon-wrap">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path
+                d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+              />
+              <path d="M8 7h8M8 11h6" />
+            </svg>
+          </div>
+          <div class="logo-title">Library<br />Management</div>
+          <div class="logo-subtitle">Aquaculture Unit</div>
+        </div>
+
+        <!-- Error message -->
+        <div class="message error" id="errorMsg">
+          <span>⚠</span>
+          <span id="errorText">Invalid credentials</span>
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input
+              type="text"
+              id="username"
+              class="form-input"
+              placeholder="Enter username"
+              autocomplete="username"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password"
+              id="password"
+              class="form-input"
+              placeholder="Enter password"
+              autocomplete="current-password"
+              onkeydown="if (event.key === 'Enter') handleLogin();"
+            />
+          </div>
+        </div>
+
+        <button class="btn-login" id="btnLogin" onclick="handleLogin()">
+          <span class="btn-shimmer"></span>
+          <span class="btn-text">Sign In</span>
+        </button>
+      </div>
+      <div class="version-tag">Library Management System • v1.0.0</div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      ipcRenderer.invoke("auth-seed-defaults").catch(console.error);
+
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("username").focus();
+      });
+
+      async function handleLogin() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) {
+          showError("Please enter username and password");
+          return;
+        }
+
+        clearError();
+        const btn = document.getElementById("btnLogin");
+        btn.disabled = true;
+        btn.classList.add("loading");
+
+        try {
+          const result = await ipcRenderer.invoke("auth-login", {
+            username,
+            password,
+          });
+          if (result.success) {
+            sessionStorage.setItem("lms_user", JSON.stringify(result.user));
+            window.location.href = "index.html";
+          } else {
+            showError(result.error || "Invalid username or password");
+          }
+        } catch (err) {
+          showError("An error occurred. Please try again.");
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+          btn.classList.remove("loading");
+        }
+      }
+
+      function showError(msg) {
+        document.getElementById("errorText").textContent = msg;
+        document.getElementById("errorMsg").classList.add("show");
+      }
+
+      function clearError() {
+        document.getElementById("errorMsg").classList.remove("show");
+      }
+    </script>
+  </body>
+</html>
